@@ -1,0 +1,4 @@
+node_modules/
+youtube-cookies.json
+.env
+*.log

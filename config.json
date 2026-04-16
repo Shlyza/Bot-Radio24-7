@@ -1,0 +1,17 @@
+{
+  "scheduler": {
+    "00:00-03:00": "lofi sleep relax",
+    "03:00-06:00": "Maher Zain Hits",
+    "06:00-09:00": "morning pop acoustic",
+    "09:00-12:00": "work focus cafe",
+    "12:00-15:00": "Indo Hits",
+    "15:00-18:00": "Slow Rock Hits",
+    "18:00-21:00": "jazz cafe relax",
+    "21:00-00:00": "night drive pop"
+  },
+  "settings": {
+    "skipOnGenreChange": false,
+    "pauseIfEmpty": true,
+    "djVoiceRate": 5 
+  }
+}
