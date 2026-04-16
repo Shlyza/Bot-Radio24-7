@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio Bot Dashboard</title>
+    <!-- Kita pakai Tailwind CSS agar tampilannya modern dan cantik tanpa ngoding CSS panjang -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-6 font-sans">
+    
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-indigo-400 mb-8 text-center">📻 Bot Radio Dashboard</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Kolom Kiri: Now Playing -->
+            <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
+                <h2 class="text-xl font-semibold text-gray-300 mb-4">🎵 Sedang Diputar</h2>
+                
+                <div id="now-playing" class="text-center py-4">
+                    <p class="text-gray-400 italic">Memuat data bot...</p>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Info Sistem -->
+            <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
+                <h2 class="text-xl font-semibold text-gray-300 mb-4">ℹ️ Info Sistem</h2>
+                <div class="space-y-3">
+                    <p class="flex justify-between border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">Status Bot</span>
+                        <span id="status" class="font-bold">-</span>
+                    </p>
+                    <p class="flex justify-between border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">Genre Terjadwal</span>
+                        <span id="genre" class="font-semibold text-indigo-300">-</span>
+                    </p>
+                    <p class="flex justify-between border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">Mesin Pencari (Engine)</span>
+                        <span id="engine" class="font-semibold text-red-400">-</span>
+                    </p>
+                    <p class="flex justify-between pt-1">
+                        <span class="text-gray-400">Total Lagu Diputar</span>
+                        <span id="song-count" class="font-semibold">-</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Bawah: Antrean -->
+        <div class="mt-6 bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
+            <h2 class="text-xl font-semibold text-gray-300 mb-4">📋 Antrean Request (<span id="queue-length">0</span>)</h2>
+            <ul id="queue-list" class="space-y-2">
+                <li class="p-3 bg-gray-700 rounded text-gray-400 text-center">Memuat antrean...</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script>
+        // Fungsi untuk mengambil data bot dan memperbarui tampilan (auto-refresh)
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+
+                // Update Info Sistem
+                document.getElementById('status').innerHTML = data.isPlaying 
+                    ? '<span class="text-green-400">🟢 Mengudara</span>' 
+                    : '<span class="text-red-400">🔴 Berhenti</span>';
+                
+                document.getElementById('genre').innerText = data.currentGenre;
+                document.getElementById('engine').innerText = data.engine.toUpperCase();
+                document.getElementById('song-count').innerText = data.songCount;
+
+                // Update Now Playing
+                const npEl = document.getElementById('now-playing');
+                if (data.currentSong) {
+                    const mode = data.isRadioPlaying 
+                        ? '<span class="bg-indigo-600 text-xs px-2 py-1 rounded-full uppercase ml-2">Mode Radio Auto</span>' 
+                        : '<span class="bg-pink-600 text-xs px-2 py-1 rounded-full uppercase ml-2">Mode Request User</span>';
+
+                    npEl.innerHTML = `
+                        <div class="mb-3">
+                            <h3 class="text-2xl font-bold text-white mb-1 line-clamp-2">${data.currentSong.title}</h3>
+                            <p class="text-gray-400">${data.currentSong.author} ${mode}</p>
+                        </div>
+                        <a href="${data.currentSong.uri}" target="_blank" class="inline-block mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">Buka di ${data.engine.toUpperCase()}</a>
+                    `;
+                } else {
+                    npEl.innerHTML = '<p class="text-gray-500 italic py-4">Bot sedang diam / idle.</p>';
+                }
+
+                // Update Queue List
+                document.getElementById('queue-length').innerText = data.queue.length;
+                const queueEl = document.getElementById('queue-list');
+                queueEl.innerHTML = '';
+                
+                if (data.queue.length > 0) {
+                    data.queue.forEach((song, i) => {
+                        const li = document.createElement('li');
+                        li.className = "p-3 bg-gray-700 rounded flex gap-3 items-center hover:bg-gray-600 transition-colors";
+                        li.innerHTML = `
+                            <span class="bg-gray-900 text-gray-400 font-bold px-3 py-1 rounded">${i + 1}</span>
+                            <div class="flex-1 truncate">
+                                <p class="font-semibold text-white truncate">${song.title}</p>
+                                <p class="text-xs text-gray-400">${song.author}</p>
+                            </div>
+                        `;
+                        queueEl.appendChild(li);
+                    });
+                } else {
+                    queueEl.innerHTML = '<li class="p-4 bg-gray-700 rounded text-gray-400 text-center italic">Tidak ada lagu yang mengantre.</li>';
+                }
+            } catch (err) {
+                console.error('Gagal terhubung ke API Dashboard', err);
+            }
+        }
+
+        // Jalankan fetchStatus setiap 2 detik sekali agar layarnya update seperti real-time!
+        setInterval(fetchStatus, 2000);
+        fetchStatus();
+    </script>
+</body>
+</html>

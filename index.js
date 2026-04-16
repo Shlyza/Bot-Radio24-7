@@ -39,6 +39,12 @@ shoukaku.on('ready', (name) => console.log(`[SYSTEM] Berhasil tersambung ke ${na
 const radio = new RadioPlayer(client, shoukaku);
 const scheduler = new GenreScheduler(radio);
 
+// ==========================================
+// NYALAKAN WEB DASHBOARD
+// ==========================================
+require('./src/dashboard/server.js')(radio);
+// ==========================================
+
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     
