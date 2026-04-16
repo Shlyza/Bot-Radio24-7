@@ -24,6 +24,8 @@
     "opusscript": "^0.0.8",
     "play-dl": "^1.9.7",
     "shoukaku": "^4.3.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1",
     "yt-search": "^2.13.1"
   }
 }

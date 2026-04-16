@@ -37,15 +37,25 @@ shoukaku.on('ready', (name) => console.log(`[SYSTEM] Berhasil tersambung ke ${na
 
 // Masukin shoukaku ke dalam RadioPlayer biar bisa dikendalikan
 const radio = new RadioPlayer(client, shoukaku);
-const scheduler = new GenreScheduler(radio);
+const initDB = require('./src/database/db');
 
-// ==========================================
-// NYALAKAN WEB DASHBOARD
-// ==========================================
-require('./src/dashboard/server.js')(radio);
-// ==========================================
+// Bungkus dalam async agar bisa nunggu database siap
+let db;
+let scheduler;
 
-client.once('ready', async () => {
+async function startBot() {
+    console.log('[SYSTEM] Menyiapkan database...');
+    db = await initDB();
+
+    scheduler = new GenreScheduler(radio, db);
+
+    // ==========================================
+    // NYALAKAN WEB DASHBOARD
+    // ==========================================
+    require('./src/dashboard/server.js')(radio, db);
+    // ==========================================
+
+    client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     
     // Jalankan fitur penjadwalan genre
@@ -213,11 +223,8 @@ client.on('messageCreate', async message => {
     // COMMAND: !help
     if (command === 'help') {
         try {
-            const configPath = path.join(__dirname, 'config.json');
-            const configFile = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            const scheduleKeys = Object.keys(configFile.scheduler);
-            
-            const scheduleInfo = scheduleKeys.map((time, index) => `**Sesi ${index + 1}** (${time}): \`${configFile.scheduler[time]}\``).join('\n');
+            const schedules = await db.all('SELECT * FROM schedules ORDER BY start_time ASC');
+            const scheduleInfo = schedules.map((row, index) => `**Sesi ${index + 1}** (${row.start_time}-${row.end_time}): \`${row.genre}\``).join('\n');
             
             const helpMessage = `
 🎶 **DISCORD RADIO BOT MENU** 🎶
@@ -256,11 +263,8 @@ Contoh: \`!gantijadwal 2 dangdut koplo\`
     // COMMAND: !jadwal (Menampilkan jadwal radio)
     if (command === 'jadwal') {
         try {
-            const configPath = path.join(__dirname, 'config.json');
-            const configFile = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            const scheduleKeys = Object.keys(configFile.scheduler);
-            
-            const scheduleInfo = scheduleKeys.map((time, index) => `**Sesi ${index + 1}** (${time}): \`${configFile.scheduler[time]}\``).join('\n');
+            const schedules = await db.all('SELECT * FROM schedules ORDER BY start_time ASC');
+            const scheduleInfo = schedules.map((row, index) => `**Sesi ${index + 1}** (${row.start_time}-${row.end_time}): \`${row.genre}\``).join('\n');
             
             message.reply(`⏰ **JADWAL RADIO SAAT INI (WIB):**\n\n${scheduleInfo}\n\n*Ganti jadwal ketik: \`${prefix}gantijadwal <nomor_sesi> <genre_atau_link>\`*`);
         } catch (error) {
@@ -269,7 +273,7 @@ Contoh: \`!gantijadwal 2 dangdut koplo\`
         }
     }
 
-    // COMMAND: !gantijadwal (Mengubah config.json secara langsung memakai nomor sesi)
+    // COMMAND: !gantijadwal (Mengubah jadwal di database secara langsung)
     if (command === 'gantijadwal') {
         const sessionNumber = parseInt(args.shift());
         const newScheduleGenre = args.join(' ');
@@ -279,36 +283,29 @@ Contoh: \`!gantijadwal 2 dangdut koplo\`
         }
 
         try {
-            const configPath = path.join(__dirname, 'config.json');
-            const configFile = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            const scheduleKeys = Object.keys(configFile.scheduler);
+            const schedules = await db.all('SELECT * FROM schedules ORDER BY start_time ASC');
 
-            if (sessionNumber > scheduleKeys.length) {
-                return message.reply(`❌ Sesi tidak ditemukan! Hanya ada Sesi 1 sampai ${scheduleKeys.length}. Ketik \`${prefix}help\`.`);
+            if (sessionNumber > schedules.length) {
+                return message.reply(`❌ Sesi tidak ditemukan! Hanya ada Sesi 1 sampai ${schedules.length}. Ketik \`${prefix}help\`.`);
             }
 
-            // Ambil waktu dari nomor sesi (index dimulai dari 0)
-            const timeRange = scheduleKeys[sessionNumber - 1];
+            const targetSession = schedules[sessionNumber - 1]; // Cari baris dari jadwal lama
 
-            // Mengupdate data scheduler di config
-            configFile.scheduler[timeRange] = newScheduleGenre;
+            // 1. UPDATE DB: Timpa genre di jadwal tsb
+            await db.run('UPDATE schedules SET genre = ? WHERE id = ?', [newScheduleGenre, targetSession.id]);
 
-            // Simpan perubahan file secara permanen
-            fs.writeFileSync(configPath, JSON.stringify(configFile, null, 2));
+            // 2. SURUH SCHEDULER BACA ULANG DB:
+            if (scheduler) await scheduler.checkAndUpdateGenre();
 
-            // Mutasi module cache agar schedule di memory juga ikut berubah seketika
-            const configLoaded = require('./config.json');
-            configLoaded.scheduler = configFile.scheduler; 
-
-            // Paksa scheduler cek ulang sekarang juga
-            scheduler.checkAndUpdateGenre();
-
-            message.reply(`✅ Jadwal **Sesi ${sessionNumber} (${timeRange})** berhasil diubah menjadi: **${newScheduleGenre}**!`);
+            message.reply(`✅ Jadwal **Sesi ${sessionNumber} (${targetSession.start_time}-${targetSession.end_time})** berhasil diubah menjadi: **${newScheduleGenre}**!`);
         } catch (error) {
             console.error(error);
-            message.reply("❌ Gagal menyimpan jadwal ke config.json.");
+            message.reply("❌ Gagal menyimpan jadwal ke database.");
         }
     }
 });
 
 client.login(process.env.DISCORD_TOKEN);
+}
+
+startBot();

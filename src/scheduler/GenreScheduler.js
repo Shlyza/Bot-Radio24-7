@@ -1,9 +1,9 @@
 const cron = require('node-cron');
-const config = require('../../config.json');
 
 class GenreScheduler {
-    constructor(radioPlayer) {
+    constructor(radioPlayer, db) {
         this.player = radioPlayer;
+        this.db = db;
     }
 
     start() {
@@ -19,25 +19,30 @@ class GenreScheduler {
         this.checkAndUpdateGenre();
     }
 
-    checkAndUpdateGenre() {
+    async checkAndUpdateGenre() {
         // Dapatkan jam dengan memformat langsung ke angka (WIB)
         const hourStr = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "numeric", hour12: false });
-        // Misal pukul 09:00, parseInt("09") = 9
         const hour = parseInt(hourStr);
         
         let newGenre = 'lofi chill'; // Default fallback
 
-        for (const [timeRange, genre] of Object.entries(config.scheduler)) {
-            const [startStr, endStr] = timeRange.split('-');
-            const startHour = parseInt(startStr.split(':')[0]);
-            let endHour = parseInt(endStr.split(':')[0]);
-            
-            if (endHour === 0) endHour = 24; // Handle format 23:59/00:00
+        try {
+            // Tarik jadwal dari database SQLite
+            const schedules = await this.db.all('SELECT * FROM schedules');
 
-            if (hour >= startHour && hour < endHour) {
-                newGenre = genre;
-                break;
+            for (const row of schedules) {
+                const startHour = parseInt(row.start_time.split(':')[0]);
+                let endHour = parseInt(row.end_time.split(':')[0]);
+                
+                if (endHour === 0) endHour = 24; // Handle format 23:59/00:00
+
+                if (hour >= startHour && hour < endHour) {
+                    newGenre = row.genre;
+                    break;
+                }
             }
+        } catch (error) {
+            console.error('[SCHEDULER] Gagal mengambil jadwal dari database:', error);
         }
 
         console.log(`[SCHEDULER] Waktu menunjukkan jam ${hour}. Set genre ke: ${newGenre}`);
