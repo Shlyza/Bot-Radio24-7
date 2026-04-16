@@ -23,10 +23,10 @@ const client = new Client({
 // KONFIGURASI KABEL KE GENSET LAVALINK
 // ==========================================
 const Nodes = [{
-    name: 'Genset Lokal Droplet', // Nama bebas
-    url: '127.0.0.1:2333', // Nyolok ke Lavalink di dalam CPU Droplet sendiri
-    auth: 'youshallnotpass', // Password pasaran bawaan Lavalink
-    secure: false // Karena di Droplet sendiri gak butuh https (wss)
+    name: 'Koyo Lavalink', // Nama bebas, untuk log di terminal
+    url: 'lava.link:80', // Format: Host:Port
+    auth: 'youshallnotpass', // Masukkan password di sini
+    secure: false // False karena pakai port 80 (http)
 }];
 
 const shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes);
