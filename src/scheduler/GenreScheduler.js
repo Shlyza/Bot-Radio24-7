@@ -20,21 +20,19 @@ class GenreScheduler {
     }
 
     async checkAndUpdateGenre() {
-        // Dapatkan jam dengan memformat langsung ke angka (WIB)
-        const hourStr = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "numeric", hour12: false });
-        const hour = parseInt(hourStr);
+        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+        const hour = now.getHours();
         
         let newGenre = 'lofi chill'; // Default fallback
 
         try {
-            // Tarik jadwal dari database SQLite
             const schedules = await this.db.all('SELECT * FROM schedules');
 
             for (const row of schedules) {
                 const startHour = parseInt(row.start_time.split(':')[0]);
                 let endHour = parseInt(row.end_time.split(':')[0]);
                 
-                if (endHour === 0) endHour = 24; // Handle format 23:59/00:00
+                if (endHour === 0) endHour = 24; 
 
                 if (hour >= startHour && hour < endHour) {
                     newGenre = row.genre;

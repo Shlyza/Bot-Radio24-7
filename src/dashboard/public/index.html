@@ -68,6 +68,40 @@
             </ul>
         </div>
 
+        <!-- Kolom Paling Bawah: Pengaturan Jadwal -->
+        <div class="mt-6 bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
+            <h2 class="text-xl font-semibold text-gray-300 mb-4">🗓️ Pengaturan Jadwal Genre Harian</h2>
+            
+            <div class="mb-4 flex flex-col sm:flex-row gap-2">
+                <input type="time" id="schedule-start" class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" required>
+                <input type="time" id="schedule-end" class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" required>
+                <input type="text" id="schedule-genre" placeholder="Genre (ex: lofi hiphop)" class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" required>
+                
+                <button onclick="addSchedule()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                    + Tambah
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-400 border-collapse">
+                    <thead class="text-xs text-gray-300 uppercase bg-gray-700">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 rounded-tl-lg">Mulai</th>
+                            <th scope="col" class="px-4 py-3">Selesai</th>
+                            <th scope="col" class="px-4 py-3">Genre</th>
+                            <th scope="col" class="px-4 py-3 rounded-tr-lg">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-table-body">
+                        <tr>
+                            <td colspan="4" class="px-4 py-4 text-center">Memuat jadwal...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p id="schedule-msg" class="text-xs mt-3 hidden"></p>
+        </div>
+
     </div>
 
     <script>
@@ -165,6 +199,99 @@
         // Jalankan fetchStatus setiap 2 detik sekali agar layarnya update seperti real-time!
         setInterval(fetchStatus, 2000);
         fetchStatus();
+
+        // === FUNGSI JADWAL HARIAN ===
+        async function fetchSchedules() {
+            try {
+                const res = await fetch('/api/schedules');
+                const result = await res.json();
+                
+                const tbody = document.getElementById('schedule-table-body');
+                tbody.innerHTML = '';
+                
+                if (result.data && result.data.length > 0) {
+                    result.data.forEach(sched => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'border-b border-gray-700 hover:bg-gray-600 transition-colors cursor-default';
+                        tr.innerHTML = `
+                            <td class="px-4 py-3">${sched.start_time}</td>
+                            <td class="px-4 py-3">${sched.end_time}</td>
+                            <td class="px-4 py-3 text-indigo-300">${sched.genre}</td>
+                            <td class="px-4 py-3">
+                                <button onclick="deleteSchedule(${sched.id})" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs transition-colors">Hapus</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-gray-400 italic">Belum ada jadwal</td></tr>`;
+                }
+            } catch (e) {
+                console.error('Error fetching schedules:', e);
+            }
+        }
+
+        async function addSchedule() {
+            const start = document.getElementById('schedule-start').value;
+            const end = document.getElementById('schedule-end').value;
+            const genre = document.getElementById('schedule-genre').value.trim();
+            const msgEl = document.getElementById('schedule-msg');
+
+            if (!start || !end || !genre) {
+                msgEl.innerText = "❌ Harap isi Jam Mulai, Jam Selesai, dan Genre!";
+                msgEl.className = "text-xs mt-3 text-red-400 block";
+                return setTimeout(() => msgEl.classList.add('hidden'), 3000);
+            }
+
+            try {
+                const res = await fetch('/api/schedules/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ start_time: start, end_time: end, genre })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    msgEl.innerText = "✅ Jadwal berhasil ditambahkan!";
+                    msgEl.className = "text-xs mt-3 text-green-400 block";
+                    // Reset input
+                    document.getElementById('schedule-start').value = '';
+                    document.getElementById('schedule-end').value = '';
+                    document.getElementById('schedule-genre').value = '';
+                    fetchSchedules(); // Refresh table
+                } else {
+                    msgEl.innerText = `❌ Gagal: ${data.message}`;
+                    msgEl.className = "text-xs mt-3 text-red-400 block";
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            setTimeout(() => msgEl.classList.add('hidden'), 3000);
+        }
+
+        async function deleteSchedule(id) {
+            if (!confirm('Hapus jadwal ini?')) return;
+            try {
+                const res = await fetch('/api/schedules/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    fetchSchedules();
+                } else {
+                    alert('Gagal menghapus: ' + data.message);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // Panggil pertama kali
+        fetchSchedules();
+
     </script>
 </body>
 </html>
