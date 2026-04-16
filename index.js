@@ -23,10 +23,10 @@ const client = new Client({
 // KONFIGURASI KABEL KE GENSET LAVALINK
 // ==========================================
 const Nodes = [{
-    name: 'Koyo Lavalink', // Nama bebas, untuk log di terminal
-    url: 'lava.link:80', // Format: Host:Port
-    auth: 'youshallnotpass', // Masukkan password di sini
-    secure: false // False karena pakai port 80 (http)
+    name: 'Serenetia Lavalink', // Nama bebas, untuk log di terminal
+    url: 'lavalinkv4.serenetia.com:443', // Format: Host:Port
+    auth: 'https://seretia.link/discord', // Masukkan password di sini
+    secure: true // Wajib true karena dari penyedia tertulis true (pakai wss/https)
 }];
 
 const shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes);
