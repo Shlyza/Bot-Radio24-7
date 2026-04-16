@@ -52,7 +52,7 @@ async function startBot() {
     // ==========================================
     // NYALAKAN WEB DASHBOARD
     // ==========================================
-    require('./src/dashboard/server.js')(radio, db);
+    require('./src/dashboard/server.js')(radio, db, scheduler);
     // ==========================================
 
     client.once('ready', async () => {

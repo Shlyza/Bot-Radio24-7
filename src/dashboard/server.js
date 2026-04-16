@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 
-module.exports = (radio, db) => {
+module.exports = (radio, db, scheduler) => {
     const app = express();
     const PORT = process.env.PORT || 3000;
 
@@ -120,6 +120,12 @@ module.exports = (radio, db) => {
                 'UPDATE schedules SET start_time = ?, end_time = ?, genre = ? WHERE id = ?', 
                 [start_time, end_time, genre, id]
             );
+
+            // Terapkan perubahan jadwal secara instan ke bot
+            const oldGenre = radio.currentGenre;
+            if (scheduler) await scheduler.checkAndUpdateGenre();
+            if (radio.currentGenre !== oldGenre && radio.player) radio.player.stopTrack();
+
             res.json({ success: true, message: 'Jadwal berhasil diubah!' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -139,6 +145,12 @@ module.exports = (radio, db) => {
                 'INSERT INTO schedules (start_time, end_time, genre) VALUES (?, ?, ?)',
                 [start_time, end_time, genre]
             );
+
+            // Terapkan perubahan jadwal secara instan ke bot
+            const oldGenre = radio.currentGenre;
+            if (scheduler) await scheduler.checkAndUpdateGenre();
+            if (radio.currentGenre !== oldGenre && radio.player) radio.player.stopTrack();
+            
             res.json({ success: true, message: 'Sesi jadwal baru ditambahkan!' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -149,6 +161,12 @@ module.exports = (radio, db) => {
         const { id } = req.body;
         try {
             await db.run('DELETE FROM schedules WHERE id = ?', [id]);
+            
+            // Terapkan perubahan jadwal secara instan ke bot
+            const oldGenre = radio.currentGenre;
+            if (scheduler) await scheduler.checkAndUpdateGenre();
+            if (radio.currentGenre !== oldGenre && radio.player) radio.player.stopTrack();
+
             res.json({ success: true, message: 'Jadwal dihapus!' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
