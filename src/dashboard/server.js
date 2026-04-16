@@ -10,16 +10,57 @@ module.exports = (radio, db) => {
     app.use(express.json()); // Wajib ditambahin agar bisa baca data POST dari front-end
 
     // Buat "Jalur Data" (API) untuk dibaca oleh HTML nanti
-    app.get('/api/status', (req, res) => {
+    app.get('/api/status', async (req, res) => {
+        let listenerCount = 0;
+        try {
+            // Hitung pendengar (member di Voice Channel - 1 bot)
+            if (radio.player && radio.player.connection) {
+                const channel = await radio.client.channels.fetch(radio.player.connection.channelId).catch(()=>null);
+                if (channel) {
+                    listenerCount = Math.max(0, channel.members.size - 1);
+                }
+            }
+        } catch (e) {
+            listenerCount = 0;
+        }
+
+        const node = radio.shoukaku.getIdealNode();
+        const nodeStatus = node && node.state === 1 ? 'Connected' : 'Disconnected';
+        const position = radio.player && radio.player.position ? radio.player.position : 0;
+
         res.json({
             isPlaying: radio.isPlaying,
             isRadioPlaying: radio.isRadioPlaying,
             currentGenre: radio.currentGenre,
             engine: radio.engine,
             songCount: radio.songCount,
-            queue: radio.queue.map(q => q.info), // Kirim daftar info antreannya saja
-            currentSong: radio.currentSong ? radio.currentSong.info : null
+            queue: radio.queue.map(q => q.info), 
+            currentSong: radio.currentSong ? radio.currentSong.info : null,
+            position: position,
+            listenerCount: listenerCount,
+            botPing: radio.client.ws.ping || 0,
+            nodeStatus: nodeStatus,
+            uptime: process.uptime() // Uptime runtime nodejs dalam detik
         });
+    });
+
+    // API Kontrol Player: Skip & Stop
+    app.post('/api/controls/skip', (req, res) => {
+        if (radio.player) {
+            radio.player.stopTrack(); // Memicu playNext otomatis
+            res.json({ success: true, message: 'Lagu berhasil di-skip!' });
+        } else {
+            res.json({ success: false, message: 'Tidak ada lagu yang sedang jalan.' });
+        }
+    });
+
+    app.post('/api/controls/stop', (req, res) => {
+        if (radio.player) {
+            radio.leave(); // Keluar dan mematikan player
+            res.json({ success: true, message: 'Bot radio berhasil dimatikan.' });
+        } else {
+            res.json({ success: false, message: 'Bot sudah offline.' });
+        }
     });
 
     // API untuk mengubah Genre secara manual lewat dashboard

@@ -39,9 +39,21 @@
                         <span class="text-gray-400">Mesin Pencari (Engine)</span>
                         <span id="engine" class="font-semibold text-red-400">-</span>
                     </p>
-                    <p class="flex justify-between pt-1">
+                    <p class="flex justify-between border-b border-gray-700 pb-2">
                         <span class="text-gray-400">Total Lagu Diputar</span>
                         <span id="song-count" class="font-semibold">-</span>
+                    </p>
+                    <p class="flex justify-between border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">Pendengar (Voice)</span>
+                        <span id="listeners" class="font-semibold text-green-300">0</span>
+                    </p>
+                    <p class="flex justify-between border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">Ping / Koneksi</span>
+                        <span id="ping" class="font-semibold">-</span>
+                    </p>
+                    <p class="flex justify-between pt-1">
+                        <span class="text-gray-400">Uptime</span>
+                        <span id="uptime" class="font-semibold text-yellow-500">-</span>
                     </p>
                 </div>
 
@@ -124,20 +136,68 @@
                 document.getElementById('genre').innerText = data.currentGenre;
                 document.getElementById('engine').innerText = data.engine.toUpperCase();
                 document.getElementById('song-count').innerText = data.songCount;
+                
+                window.currentActiveGenre = data.currentGenre; // Simpan untuk highlight tabel jadwal
+                document.getElementById('listeners').innerText = data.listenerCount + ' User';
+                document.getElementById('ping').innerText = `${data.botPing}ms / ${data.nodeStatus}`;
+                
+                const uptimeTotalSeconds = Math.floor(data.uptime);
+                const hours = Math.floor(uptimeTotalSeconds / 3600);
+                const minutes = Math.floor((uptimeTotalSeconds % 3600) / 60);
+                const seconds = uptimeTotalSeconds % 60;
+                document.getElementById('uptime').innerText = `${hours}h ${minutes}m ${seconds}s`;
 
                 // Update Now Playing
                 const npEl = document.getElementById('now-playing');
                 if (data.currentSong) {
                     const mode = data.isRadioPlaying 
-                        ? '<span class="bg-indigo-600 text-xs px-2 py-1 rounded-full uppercase ml-2">Mode Radio Auto</span>' 
-                        : '<span class="bg-pink-600 text-xs px-2 py-1 rounded-full uppercase ml-2">Mode Request User</span>';
+                        ? '<span class="bg-indigo-600 text-xs px-2 py-1 rounded-full uppercase ml-1">Radio Auto</span>' 
+                        : '<span class="bg-pink-600 text-xs px-2 py-1 rounded-full uppercase ml-1">Request User</span>';
+
+                    const formatTime = (ms) => {
+                        const totalS = Math.floor(ms / 1000);
+                        const m = Math.floor(totalS / 60);
+                        const s = totalS % 60;
+                        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                    };
+                    
+                    const durationStr = formatTime(data.currentSong.length);
+                    const positionStr = formatTime(data.position);
+                    const progressPercent = Math.min(100, Math.max(0, (data.position / data.currentSong.length) * 100));
+                    
+                    const thumbnail = data.currentSong.artworkUrl || `https://img.youtube.com/vi/${data.currentSong.identifier}/mqdefault.jpg`;
 
                     npEl.innerHTML = `
-                        <div class="mb-3">
-                            <h3 class="text-2xl font-bold text-white mb-1 line-clamp-2">${data.currentSong.title}</h3>
-                            <p class="text-gray-400">${data.currentSong.author} ${mode}</p>
+                        <div class="flex flex-col items-center">
+                            <img src="${thumbnail}" alt="Thumbnail" class="w-full h-40 object-cover rounded-lg shadow-md mb-4 border border-gray-600" onerror="this.src='https://via.placeholder.com/640x360.png?text=No+Thumbnail'">
+                            
+                            <div class="w-full mb-3 text-center">
+                                <h3 class="text-xl font-bold text-white mb-1 line-clamp-1">${data.currentSong.title}</h3>
+                                <p class="text-sm text-gray-400 truncate">${data.currentSong.author} ${mode}</p>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="w-full mb-4">
+                                <div class="flex justify-between text-xs text-gray-400 mb-1 font-mono">
+                                    <span>${positionStr}</span>
+                                    <span>${durationStr}</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                    <div class="bg-indigo-500 h-2.5 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tombol Kontrol Ekstra -->
+                            <div class="flex gap-2 mt-1 w-full justify-center">
+                                <button onclick="skipSong()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-2 rounded-lg text-sm font-semibold transition-colors border border-gray-600">
+                                    ⏭️ Skip
+                                </button>
+                                <button onclick="stopBot()" class="flex-1 bg-red-900 hover:bg-red-800 text-red-100 py-2 px-2 rounded-lg text-sm font-semibold transition-colors border border-red-700">
+                                    ⏹️ Stop
+                                </button>
+                                <a href="${data.currentSong.uri}" target="_blank" class="flex-1 flex justify-center items-center bg-gray-700 hover:bg-gray-600 text-white px-2 py-2 rounded-lg text-sm font-semibold transition-colors border border-gray-600">🔗 URL</a>
+                            </div>
                         </div>
-                        <a href="${data.currentSong.uri}" target="_blank" class="inline-block mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">Buka di ${data.engine.toUpperCase()}</a>
                     `;
                 } else {
                     npEl.innerHTML = '<p class="text-gray-500 italic py-4">Bot sedang diam / idle.</p>';
@@ -205,6 +265,22 @@
         setInterval(fetchStatus, 2000);
         fetchStatus();
 
+        // === FUNGSI KONTROL BOT ===
+        async function skipSong() {
+            try {
+                await fetch('/api/controls/skip', { method: 'POST' });
+                fetchStatus();
+            } catch(e) { console.error('Gagal skip:', e); }
+        }
+
+        async function stopBot() {
+            if(!confirm('Yakin ingin mematikan bot dan keluar dari Voice Channel?')) return;
+            try {
+                await fetch('/api/controls/stop', { method: 'POST' });
+                fetchStatus();
+            } catch(e) { console.error('Gagal stop:', e); }
+        }
+
         // === FUNGSI JADWAL HARIAN ===
         async function fetchSchedules() {
             try {
@@ -217,11 +293,18 @@
                 if (result.data && result.data.length > 0) {
                     result.data.forEach(sched => {
                         const tr = document.createElement('tr');
-                        tr.className = 'border-b border-gray-700 hover:bg-gray-600 transition-colors cursor-default';
+                        // Highlight aktif jika genrenya sama dengan yang sekarang
+                        const isActive = (window.currentActiveGenre || '').toLowerCase() === sched.genre.toLowerCase();
+                        tr.className = isActive 
+                            ? 'border-b border-indigo-500 bg-indigo-900 bg-opacity-40 cursor-default shadow-inner'
+                            : 'border-b border-gray-700 hover:bg-gray-600 transition-colors cursor-default';
+                        
                         tr.innerHTML = `
-                            <td class="px-4 py-3">${sched.start_time}</td>
-                            <td class="px-4 py-3">${sched.end_time}</td>
-                            <td class="px-4 py-3 text-indigo-300">${sched.genre}</td>
+                            <td class="px-4 py-3 ${isActive ? 'font-bold text-white' : ''}">${sched.start_time}</td>
+                            <td class="px-4 py-3 ${isActive ? 'font-bold text-white' : ''}">${sched.end_time}</td>
+                            <td class="px-4 py-3 ${isActive ? 'font-bold text-indigo-300' : 'text-indigo-300'}">
+                                ${sched.genre} ${isActive ? '<span class="ml-2 bg-green-500 text-white text-[10px] px-2 py-0.5 rounded-full uppercase">Aktif</span>' : ''}
+                            </td>
                             <td class="px-4 py-3">
                                 <button onclick="editSchedule(${sched.id}, '${sched.start_time}', '${sched.end_time}', '${sched.genre}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs transition-colors mr-1">Edit</button>
                                 <button onclick="deleteSchedule(${sched.id})" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs transition-colors">Hapus</button>
