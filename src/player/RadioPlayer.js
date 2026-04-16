@@ -31,17 +31,20 @@ class RadioPlayer {
             console.log('[RADIO] Berhasil masuk Voice Channel via Lavalink!');
 
             this.player.on('end', (reason) => {
-                console.log('[DEBUG] Track End Reason:', reason);
+                console.log('[DEBUG] Track End Reason:', reason ? reason.reason : 'Tidak ada');
+                
+                // Pastikan format alasan (reason) selalu UPPERCASE agar aman di Shoukaku v3 dan v4
+                const endReason = reason && reason.reason ? reason.reason.toUpperCase() : 'UNKNOWN';
+
                 // Cegah loop jika track diganti secara otomatis oleh playTrack()
-                if (reason && reason.reason === 'REPLACED') return;
+                if (endReason === 'REPLACED') return;
                 
                 // Kalau lagu full album tiba-tiba berhenti padahal belum selesai
-                // Kita coba resume dari posisi terakhir (kurangi beberapa detik untuk buffer)
                 let isPremature = false;
                 let resumePosition = 0;
 
-                // Pastikan player posisinya masuk akal (> 10 detik dan < total durasi - 10 detik)
-                if (reason && reason.reason !== 'STOPPED' && this.currentSong && !this.currentSong.info.isStream) {
+                // Pastikan tidak resume kalau lagunya distop paksa (!skip) atau memang beres normal (FINISHED)
+                if (endReason !== 'STOPPED' && endReason !== 'FINISHED' && this.currentSong && !this.currentSong.info.isStream) {
                     if (this.player.position > 10000 && this.player.position < (this.currentSong.info.length - 10000)) {
                         isPremature = true;
                         resumePosition = Math.max(0, this.player.position - 5000);
