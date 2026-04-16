@@ -36,6 +36,26 @@ module.exports = (radio, db) => {
         res.json({ success: true, message: `Berhasil ganti genre ke: ${genre}` });
     });
 
+    // === FUNGSI BANTU CEK BENTROK JADWAL ===
+    async function isOverlap(st, et, excludeId = null) {
+        let startTime = parseInt(st.replace(':', ''));
+        let endTime = parseInt(et.replace(':', ''));
+        if (endTime === 0) endTime = 2400;
+
+        const schedules = await db.all('SELECT * FROM schedules');
+        for (const row of schedules) {
+            if (excludeId && row.id === parseInt(excludeId)) continue;
+
+            let rowSt = parseInt(row.start_time.replace(':', ''));
+            let rowEt = parseInt(row.end_time.replace(':', ''));
+            if (rowEt === 0) rowEt = 2400;
+
+            // Jika nambah/edit waktu yang bersinggungan
+            if (startTime < rowEt && endTime > rowSt) return true;
+        }
+        return false;
+    }
+
     // === API DATABASE JADWAL ===
     app.get('/api/schedules', async (req, res) => {
         try {
@@ -51,6 +71,10 @@ module.exports = (radio, db) => {
         if (!id || !genre) return res.status(400).json({ success: false, message: 'ID dan Genre baru dibutuhkan!' });
 
         try {
+            if (await isOverlap(start_time, end_time, id)) {
+                return res.status(400).json({ success: false, message: 'Jam ini bentrok dengan jadwal lain!' });
+            }
+
             await db.run(
                 'UPDATE schedules SET start_time = ?, end_time = ?, genre = ? WHERE id = ?', 
                 [start_time, end_time, genre, id]
@@ -66,6 +90,10 @@ module.exports = (radio, db) => {
         if (!genre || !start_time || !end_time) return res.status(400).json({ success: false, message: 'Harap isi semua kolom' });
 
         try {
+            if (await isOverlap(start_time, end_time)) {
+                return res.status(400).json({ success: false, message: 'Jam ini bentrok dengan jadwal jadwal lain!' });
+            }
+
             await db.run(
                 'INSERT INTO schedules (start_time, end_time, genre) VALUES (?, ?, ?)',
                 [start_time, end_time, genre]

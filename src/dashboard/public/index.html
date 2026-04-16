@@ -73,12 +73,17 @@
             <h2 class="text-xl font-semibold text-gray-300 mb-4">🗓️ Pengaturan Jadwal Genre Harian</h2>
             
             <div class="mb-4 flex flex-col sm:flex-row gap-2">
+                <!-- Gunakan input hidden untuk menyimpan ID jadwal yang sedang diedit -->
+                <input type="hidden" id="schedule-id">
                 <input type="time" id="schedule-start" class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" required>
                 <input type="time" id="schedule-end" class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" required>
                 <input type="text" id="schedule-genre" placeholder="Genre (ex: lofi hiphop)" class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" required>
                 
-                <button onclick="addSchedule()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                <button id="btn-save-schedule" onclick="saveSchedule()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
                     + Tambah
+                </button>
+                <button id="btn-cancel-edit" onclick="cancelEdit()" class="hidden bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                    Batal
                 </button>
             </div>
 
@@ -218,6 +223,7 @@
                             <td class="px-4 py-3">${sched.end_time}</td>
                             <td class="px-4 py-3 text-indigo-300">${sched.genre}</td>
                             <td class="px-4 py-3">
+                                <button onclick="editSchedule(${sched.id}, '${sched.start_time}', '${sched.end_time}', '${sched.genre}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs transition-colors mr-1">Edit</button>
                                 <button onclick="deleteSchedule(${sched.id})" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs transition-colors">Hapus</button>
                             </td>
                         `;
@@ -231,7 +237,36 @@
             }
         }
 
-        async function addSchedule() {
+        function editSchedule(id, start, end, genre) {
+            document.getElementById('schedule-id').value = id;
+            document.getElementById('schedule-start').value = start;
+            document.getElementById('schedule-end').value = end;
+            document.getElementById('schedule-genre').value = genre;
+            
+            const btnSave = document.getElementById('btn-save-schedule');
+            btnSave.innerText = "Simpan Perubahan";
+            btnSave.classList.replace('bg-green-600', 'bg-indigo-600');
+            btnSave.classList.replace('hover:bg-green-700', 'hover:bg-indigo-700');
+            
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+        }
+
+        function cancelEdit() {
+            document.getElementById('schedule-id').value = '';
+            document.getElementById('schedule-start').value = '';
+            document.getElementById('schedule-end').value = '';
+            document.getElementById('schedule-genre').value = '';
+            
+            const btnSave = document.getElementById('btn-save-schedule');
+            btnSave.innerText = "+ Tambah";
+            btnSave.classList.replace('bg-indigo-600', 'bg-green-600');
+            btnSave.classList.replace('hover:bg-indigo-700', 'hover:bg-green-700');
+            
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        async function saveSchedule() {
+            const id = document.getElementById('schedule-id').value;
             const start = document.getElementById('schedule-start').value;
             const end = document.getElementById('schedule-end').value;
             const genre = document.getElementById('schedule-genre').value.trim();
@@ -243,22 +278,24 @@
                 return setTimeout(() => msgEl.classList.add('hidden'), 3000);
             }
 
+            const isEdit = id !== '';
+            const endpoint = isEdit ? '/api/schedules/update' : '/api/schedules/add';
+            const bodyData = { start_time: start, end_time: end, genre };
+            if (isEdit) bodyData.id = id;
+
             try {
-                const res = await fetch('/api/schedules/add', {
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ start_time: start, end_time: end, genre })
+                    body: JSON.stringify(bodyData)
                 });
                 
                 const data = await res.json();
                 
                 if (data.success) {
-                    msgEl.innerText = "✅ Jadwal berhasil ditambahkan!";
+                    msgEl.innerText = isEdit ? "✅ Jadwal berhasil diperbarui!" : "✅ Jadwal berhasil ditambahkan!";
                     msgEl.className = "text-xs mt-3 text-green-400 block";
-                    // Reset input
-                    document.getElementById('schedule-start').value = '';
-                    document.getElementById('schedule-end').value = '';
-                    document.getElementById('schedule-genre').value = '';
+                    cancelEdit(); // Reset form & tombol
                     fetchSchedules(); // Refresh table
                 } else {
                     msgEl.innerText = `❌ Gagal: ${data.message}`;
