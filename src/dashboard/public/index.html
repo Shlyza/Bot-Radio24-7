@@ -44,6 +44,19 @@
                         <span id="song-count" class="font-semibold">-</span>
                     </p>
                 </div>
+
+                <!-- Bagian Kontrol Ganti Genre -->
+                <div class="mt-6 border-t border-gray-700 pt-4">
+                    <h3 class="text-lg font-semibold text-gray-300 mb-2">🎛️ Kendali Radio</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="genre-input" placeholder="Masukkan judul genre/penyanyi..." 
+                            class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                        <button onclick="changeGenre()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                            Ubah
+                        </button>
+                    </div>
+                    <p id="genre-msg" class="text-xs mt-2 hidden"></p>
+                </div>
             </div>
         </div>
 
@@ -114,6 +127,38 @@
                 }
             } catch (err) {
                 console.error('Gagal terhubung ke API Dashboard', err);
+            }
+        }
+
+        // Fungsi untuk menembak API Ganti Genre
+        async function changeGenre() {
+            const input = document.getElementById('genre-input');
+            const msgEl = document.getElementById('genre-msg');
+            const genre = input.value.trim();
+
+            if (!genre) return;
+
+            try {
+                const res = await fetch('/api/genre', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ genre: genre })
+                });
+                
+                const data = await res.json();
+                
+                msgEl.classList.remove('hidden');
+                msgEl.classList.add(data.success ? 'text-green-400' : 'text-red-400');
+                msgEl.innerText = data.success ? `✅ Genre terganti! (Lagu segera berubah)` : '❌ Gagal mengganti genre';
+                
+                input.value = ''; // Kosongkan input
+                
+                // Hilangkan pesan sukses setelah 3 detik
+                setTimeout(() => msgEl.classList.add('hidden'), 3000);
+                
+                fetchStatus(); // Paksa refresh layar sekarang juga
+            } catch(e) {
+                console.error('Error:', e);
             }
         }
 
