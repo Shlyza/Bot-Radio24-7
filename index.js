@@ -23,9 +23,9 @@ const client = new Client({
 // KONFIGURASI KABEL KE GENSET LAVALINK
 // ==========================================
 const Nodes = [{
-    name: 'Serenetia Lavalink', // Nama bebas, untuk log di terminal
-    url: 'lavalinkv4.serenetia.com:443', // Format: Host:Port
-    auth: 'https://seretia.link/discord', // Masukkan password di sini
+    name: 'MilloHost Lavalink (Asia)', // Nama bebas, untuk log di terminal
+    url: 'lava-v4.millohost.my.id:443', // Format: Host:Port
+    auth: 'https://discord.gg/mjS5J2K3ep', // Masukkan password di sini
     secure: true // Wajib true karena dari penyedia tertulis true (pakai wss/https)
 }];
 
