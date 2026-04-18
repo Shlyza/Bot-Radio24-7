@@ -27,6 +27,14 @@ module.exports = (radio, db, scheduler) => {
         const node = radio.shoukaku.getIdealNode();
         const nodeStatus = node && node.state === 1 ? 'Connected' : 'Disconnected';
         const position = radio.player && radio.player.position ? radio.player.position : 0;
+        
+        // Ambil ping spesifik koneksi Voice/Audio (Lavalink) jika bot sedang terhubung
+        const voicePing = radio.player && radio.player.ping ? radio.player.ping : 0;
+        // Ambil ping teks Gateway Discord
+        const botPing = radio.client.ws.ping || 0;
+        
+        // Gunakan voicePing jika tersedia, jika tidak pakai botPing sebagai cadangan
+        const activePing = voicePing > 0 ? voicePing : botPing;
 
         res.json({
             isPlaying: radio.isPlaying,
@@ -39,7 +47,7 @@ module.exports = (radio, db, scheduler) => {
             currentSong: radio.currentSong ? radio.currentSong.info : null,
             position: position,
             listenerCount: listenerCount,
-            botPing: radio.client.ws.ping || 0,
+            botPing: activePing,
             nodeStatus: nodeStatus,
             uptime: process.uptime() // Uptime runtime nodejs dalam detik
         });
