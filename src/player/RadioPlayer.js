@@ -25,7 +25,8 @@ class RadioPlayer {
             this.player = await this.shoukaku.joinVoiceChannel({
                 guildId: guildId,
                 channelId: channelId,
-                shardId: 0
+                shardId: 0,
+                deaf: true // Wajib true agar bot tuli (tidak menerima suara user). Mencegah Discord memutus sepihak koneksi suaranya.
             });
 
             console.log('[RADIO] Berhasil masuk Voice Channel via Lavalink!');
@@ -43,12 +44,12 @@ class RadioPlayer {
                 let isPremature = false;
                 let resumePosition = 0;
 
-                // Pastikan tidak resume kalau lagunya distop paksa (!skip) atau memang beres normal (FINISHED)
-                if (endReason !== 'STOPPED' && endReason !== 'FINISHED' && this.currentSong && !this.currentSong.info.isStream) {
+                // Pastikan tidak resume kalau lagunya distop paksa (!skip)
+                if (endReason !== 'STOPPED' && this.currentSong && !this.currentSong.info.isStream) {
                     if (this.player.position > 10000 && this.player.position < (this.currentSong.info.length - 10000)) {
                         isPremature = true;
                         resumePosition = Math.max(0, this.player.position - 5000);
-                        console.log(`[RADIO] Lagu tiba-tiba berhenti! Mencoba auto-resume dari: ${resumePosition}ms`);
+                        console.log(`[RADIO] Lagu tiba-tiba berhenti! (Reason: ${endReason}, Terakhir: ${this.player.position}ms / ${this.currentSong.info.length}ms) Mencoba auto-resume dari: ${resumePosition}ms`);
                     }
                 }
                 
@@ -58,6 +59,14 @@ class RadioPlayer {
 
             this.player.on('exception', (err) => {
                 console.error('[DEBUG] Lavalink Track Exception:', err);
+                this.isPlaying = false;
+                setTimeout(() => this.playNext(), 2000);
+            });
+
+            this.player.on('stuck', (data) => {
+                console.log('[DEBUG] Lavalink Track Stuck! (Audio macet). Skip otomatis...');
+                this.isPlaying = false;
+                setTimeout(() => this.playNext(), 2000);
             });
 
             this.player.on('closed', () => this.leave());
@@ -96,6 +105,24 @@ class RadioPlayer {
     async playNext(opts = { isResume: false, position: 0 }) {
         if (this.isPlaying || !this.player) return;
 
+        // Jika lagu terputus di tengah jalan (premature), prioritas utama adalah me-resume lagu saat ini
+        if (opts.isResume && this.currentSong) {
+            console.log(`[RADIO RESUME] 🎵 Melanjutkan ${this.currentSong.info.title} di posisi ${opts.position}ms`);
+            try {
+                this.isPlaying = true;
+                await this.player.playTrack({ 
+                    track: { encoded: this.currentSong.encoded },
+                    position: opts.position
+                });
+                return;
+            } catch (error) {
+                console.error('[CRITICAL ERROR RESUME]', error.message);
+                this.isPlaying = false;
+                setTimeout(() => this.playNext(), 3000);
+                return;
+            }
+        }
+
         // ==========================================
         // CEK ANTREAN LAGU REQUEST USER (PRIORITAS!)
         // ==========================================
@@ -130,17 +157,6 @@ class RadioPlayer {
             this.isPlaying = true;
             const node = this.shoukaku.getIdealNode();
             if (!node) return;
-
-            // Jika resume diaktifkan, putar lagu yang sama dari posisi terakhir
-            if (opts.isResume && this.currentSong) {
-                console.log(`[RADIO RESUME] 🎵 Melanjutkan ${this.currentSong.info.title} di posisi ${opts.position}ms`);
-                await this.player.playTrack({ 
-                    track: { encoded: this.currentSong.encoded },
-                    // Gunakan properti position bawaan Lavalink v4 / Shoukaku v4
-                    position: opts.position
-                });
-                return;
-            }
 
             let query;
             // Cek apakah genre dari scheduler ini berupa Link URL 
