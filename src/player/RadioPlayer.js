@@ -187,26 +187,25 @@ class RadioPlayer {
             }
             
             const result = await node.rest.resolve(query);
-            // !! [DEBUG] MENCETAK ISI RESULT !!
-            console.log("\n[DEBUG] HASIL PENCARIAN:", JSON.stringify(result, null, 2));
 
-            if (!result || ['empty', 'error'].includes(result.loadType) || (!result.data && !result.tracks)) {
+            if (!result || result.loadType === 'empty' || result.loadType === 'error' || !result.data) {
                 console.log(`[${this.engine.toUpperCase()}] Waduh, lagu nggak ketemu. Skip otomatis...`);
-                console.log(`[DEBUG FAIL] RAW Result:`, JSON.stringify(result).substring(0, 300));
                 this.isPlaying = false;
                 setTimeout(() => this.playNext(), 3000);
                 return;
             }
 
             let searchData = [];
-            // Parse loadType bawaan Lavalink v4 / Shoukaku v4
-            if (['playlist', 'search'].includes(result.loadType) || result.loadType === 'PLAYLIST_LOADED' || result.loadType === 'SEARCH_RESULT') {
-                searchData = result.data?.tracks || result.data || result.tracks || [];
-                if (!Array.isArray(searchData)) searchData = [];
-            } else if (result.loadType === 'track' || result.loadType === 'TRACK_LOADED') {
-                searchData = [result.data || result];
+            // Parse loadType bawaan Lavalink v4
+            if (result.loadType === 'playlist') {
+                searchData = result.data.tracks;
+            } else if (result.loadType === 'search') {
+                searchData = result.data;
+            } else if (result.loadType === 'track') {
+                searchData = [result.data];
             } else {
-                searchData = Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : [result.data || result]);
+                // Berjaga-jaga jika balikan list array biasa
+                searchData = Array.isArray(result.data) ? result.data : [result.data];
             }
 
             if (searchData.length === 0) {
@@ -299,28 +298,21 @@ class RadioPlayer {
 
         const result = await node.rest.resolve(finalQuery);
         
-        if (!result || ['empty', 'error'].includes(result.loadType) || (!result.data && !result.tracks)) {
+        if (!result || result.loadType === 'empty' || result.loadType === 'error' || !result.data || (Array.isArray(result.data) && result.data.length === 0)) {
             return sendReply(`❌ Waduh, lagunya nggak ketemu nih di \`${this.engine}\`.`);
         }
 
         let respMessage = '';
         // Kalau bentuknya Playlist
-        if (result.loadType === 'playlist' || result.loadType === 'PLAYLIST_LOADED') {
-            const tracks = result.data?.tracks || result.tracks || [];
-            for (const track of tracks) {
+        if (result.loadType === 'playlist') {
+            for (const track of result.data.tracks) {
                 this.queue.push(track);
             }
-            const name = result.data?.info?.name || result.playlistInfo?.name || "Playlist";
-            respMessage = sendReply(`📁 ✅ Playlist **${name}** berhasil ditumpuk ke antrean! (+${tracks.length} lagu).`);
+            respMessage = sendReply(`📁 ✅ Playlist **${result.data.info.name}** berhasil ditumpuk ke antrean! (+${result.data.tracks.length} lagu).`);
         } 
         // Kalau bentuknya judul tunggal
         else {
-            let track;
-            if (result.loadType === 'track' || result.loadType === 'TRACK_LOADED') track = result.data || result;
-            else if (result.loadType === 'search' || result.loadType === 'SEARCH_RESULT') track = (result.data || result.tracks || [])[0];
-            else track = Array.isArray(result.data) ? result.data[0] : (Array.isArray(result) ? result[0] : result.data);
-
-            if (!track) return sendReply(`❌ Gagal membaca respon lagu.`);
+            const track = result.loadType === 'track' ? result.data : result.data[0];
             this.queue.push(track);
             respMessage = sendReply(`✅ **${track.info.title}** berhasil ditumpuk ke antrean nomor **#${this.queue.length}**.`);
         }
