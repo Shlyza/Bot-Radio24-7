@@ -261,9 +261,17 @@ class RadioPlayer {
     }
 
     // Logika ketika user menambah lagu dengan command !play
-    async addToQueue(query, message) {
+    async addToQueue(query, message = null) {
+        const replyMode = typeof message === 'object' && message !== null;
+        const sendReply = (text) => {
+            if (replyMode && message.reply) {
+                message.reply(text).catch(console.error);
+            }
+            return text; // Return teks mentahnya juga supaya gampang dibaca API
+        };
+
         const node = this.shoukaku.getIdealNode();
-        if (!node) return message.reply('❌ Genset Lavalink tidak tersedia! Coba lagi bentar.');
+        if (!node) return sendReply('❌ Genset Lavalink tidak tersedia! Coba lagi bentar.');
 
         // Mengecek apakah yg dimasukkin link / kata biasa
         const isUrl = query.startsWith('http://') || query.startsWith('https://');
@@ -274,21 +282,22 @@ class RadioPlayer {
         const result = await node.rest.resolve(finalQuery);
         
         if (!result || result.loadType === 'empty' || result.loadType === 'error' || !result.data || (Array.isArray(result.data) && result.data.length === 0)) {
-            return message.reply(`❌ Waduh, lagunya nggak ketemu nih di \`${this.engine}\`.`);
+            return sendReply(`❌ Waduh, lagunya nggak ketemu nih di \`${this.engine}\`.`);
         }
 
+        let respMessage = '';
         // Kalau bentuknya Playlist
         if (result.loadType === 'playlist') {
             for (const track of result.data.tracks) {
                 this.queue.push(track);
             }
-            message.reply(`📁 ✅ Playlist **${result.data.info.name}** berhasil ditumpuk ke antrean! (+${result.data.tracks.length} lagu).`);
+            respMessage = sendReply(`📁 ✅ Playlist **${result.data.info.name}** berhasil ditumpuk ke antrean! (+${result.data.tracks.length} lagu).`);
         } 
         // Kalau bentuknya judul tunggal
         else {
             const track = result.loadType === 'track' ? result.data : result.data[0];
             this.queue.push(track);
-            message.reply(`✅ **${track.info.title}** berhasil ditumpuk ke antrean nomor **#${this.queue.length}**.`);
+            respMessage = sendReply(`✅ **${track.info.title}** berhasil ditumpuk ke antrean nomor **#${this.queue.length}**.`);
         }
 
         // Kalau bot kebetulan lagi muterin radio (bukan antrean user), setop lagunya 
@@ -298,6 +307,8 @@ class RadioPlayer {
         } else if (!this.isPlaying) {
             this.playNext(); // Pancing nyala kalau bot lagi diem
         }
+
+        return respMessage;
     }
 }
 

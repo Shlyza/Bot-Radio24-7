@@ -57,14 +57,14 @@
                     </p>
                 </div>
 
-                <!-- Bagian Kontrol Ganti Genre -->
+                <!-- Bagian Kontrol Request Lagu -->
                 <div class="mt-6 border-t border-gray-700 pt-4">
-                    <h3 class="text-lg font-semibold text-gray-300 mb-2">🎛️ Kendali Radio</h3>
+                    <h3 class="text-lg font-semibold text-gray-300 mb-2">🎛️ Request Lagu (!play)</h3>
                     <div class="flex gap-2">
-                        <input type="text" id="genre-input" placeholder="Masukkan judul genre/penyanyi..." 
+                        <input type="text" id="genre-input" placeholder="Masukkan judul lagu atau link YouTube..." 
                             class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
-                        <button onclick="changeGenre()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
-                            Ubah
+                        <button onclick="requestSong()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                            Putar
                         </button>
                     </div>
                     <p id="genre-msg" class="text-xs mt-2 hidden"></p>
@@ -229,31 +229,36 @@
             }
         }
 
-        // Fungsi untuk menembak API Ganti Genre
-        async function changeGenre() {
+        // Fungsi untuk menembak API Request Lagu (!play command ekivalen)
+        async function requestSong() {
             const input = document.getElementById('genre-input');
             const msgEl = document.getElementById('genre-msg');
-            const genre = input.value.trim();
+            const query = input.value.trim();
 
-            if (!genre) return;
+            if (!query) return;
 
             try {
-                const res = await fetch('/api/genre', {
+                const res = await fetch('/api/play', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ genre: genre })
+                    body: JSON.stringify({ query: query })
                 });
                 
                 const data = await res.json();
                 
                 msgEl.classList.remove('hidden');
                 msgEl.classList.add(data.success ? 'text-green-400' : 'text-red-400');
-                msgEl.innerText = data.success ? `✅ Genre terganti! (Lagu segera berubah)` : '❌ Gagal mengganti genre';
+                msgEl.innerText = data.message || (data.success ? '✅ Berhasil dimasukkan ke antrean!' : '❌ Gagal memasukkan lagu');
                 
-                input.value = ''; // Kosongkan input
+                if (data.success) {
+                    input.value = ''; // Kosongkan input
+                }
                 
-                // Hilangkan pesan sukses setelah 3 detik
-                setTimeout(() => msgEl.classList.add('hidden'), 3000);
+                // Hilangkan pesan sukses/error setelah 5 detik
+                setTimeout(() => {
+                    msgEl.classList.add('hidden');
+                    msgEl.className = 'text-xs mt-2 hidden'; // resete classes
+                }, 5000);
                 
                 fetchStatus(); // Paksa refresh layar sekarang juga
             } catch(e) {

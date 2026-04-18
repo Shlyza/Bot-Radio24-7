@@ -63,18 +63,23 @@ module.exports = (radio, db, scheduler) => {
         }
     });
 
-    // API untuk mengubah Genre secara manual lewat dashboard
-    app.post('/api/genre', (req, res) => {
-        const { genre } = req.body;
-        if (!genre) return res.status(400).json({ success: false, message: 'Nama genre dibutuhkan!' });
+    // API untuk merequest lagu langsung ke antrean (seperti command !play) lewat dashboard
+    app.post('/api/play', async (req, res) => {
+        const { query } = req.body;
+        if (!query) return res.status(400).json({ success: false, message: 'Judul lagu dibutuhkan!' });
 
-        radio.setGenre(genre);
-
-        // Kasih efek langsung skip memanggil lagu genre baru
-        if (radio.player) {
-            radio.player.stopTrack(); // skip lagunya agar terputar genre yang baru
+        if (!radio.player) {
+            return res.status(400).json({ success: false, message: 'Bot sedang offline atau tidak ada di Voice Channel!' });
         }
-        res.json({ success: true, message: `Berhasil ganti genre ke: ${genre}` });
+
+        try {
+            const addResult = await radio.addToQueue(query);
+            // addToQueue me-return string message
+            const isError = addResult.includes('❌');
+            res.json({ success: !isError, message: addResult.replace(/[*#]/g, '') });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     });
 
     // === FUNGSI BANTU CEK BENTROK JADWAL ===
