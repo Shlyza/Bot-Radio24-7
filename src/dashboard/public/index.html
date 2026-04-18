@@ -48,8 +48,12 @@
                         <span id="listeners" class="font-semibold text-green-300">0</span>
                     </p>
                     <p class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400">Ping / Koneksi</span>
-                        <span id="ping" class="font-semibold">-</span>
+                        <span class="text-gray-400" title="Bot to Discord Text API Ping">Ping Bot (Teks)</span>
+                        <span id="ping-bot" class="font-semibold">-</span>
+                    </p>
+                    <p class="flex justify-between border-b border-gray-700 pb-2">
+                        <span class="text-gray-400" title="Lavalink to Discord Voice Server Ping">Ping Suara (Voice)</span>
+                        <span id="ping-voice" class="font-semibold">-</span>
                     </p>
                     <p class="flex justify-between pt-1">
                         <span class="text-gray-400">Uptime</span>
@@ -151,8 +155,15 @@
                 document.getElementById('listeners').innerText = data.listenerCount + ' User';
                 
                 // Ping Visual Indicator
-                const pingColor = data.botPing < 100 ? 'text-green-400' : (data.botPing < 200 ? 'text-yellow-400' : 'text-red-500');
-                document.getElementById('ping').innerHTML = `<span class="${pingColor}">${data.botPing}ms</span> / ${data.nodeStatus}`;
+                const pingBotColor = data.botPing < 100 ? 'text-green-400' : (data.botPing < 200 ? 'text-yellow-400' : 'text-red-500');
+                document.getElementById('ping-bot').innerHTML = `<span class="${pingBotColor}">${data.botPing}ms</span>`;
+
+                if (data.voicePing > 0) {
+                    const pingVoiceColor = data.voicePing < 50 ? 'text-green-400' : (data.voicePing < 120 ? 'text-yellow-400' : 'text-red-500');
+                    document.getElementById('ping-voice').innerHTML = `<span class="${pingVoiceColor}">${data.voicePing}ms</span> / ${data.nodeStatus}`;
+                } else {
+                    document.getElementById('ping-voice').innerHTML = `<span class="text-gray-500">Idle</span> / ${data.nodeStatus}`;
+                }
                 
                 // Sync Volume Slider if not being dragged
                 const volSlider = document.getElementById('global-volume');
