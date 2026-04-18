@@ -82,6 +82,27 @@ module.exports = (radio, db, scheduler) => {
         }
     });
 
+    // API Mengelola Antrean (Hapus / Pindah)
+    app.post('/api/queue/remove', (req, res) => {
+        const { index } = req.body;
+        if (typeof index !== 'number' || index < 0 || index >= radio.queue.length) {
+            return res.status(400).json({ success: false, message: 'Index tidak valid' });
+        }
+        const removed = radio.queue.splice(index, 1)[0];
+        res.json({ success: true, message: `Lagu ${removed.info.title} dihapus dari antrean.` });
+    });
+
+    app.post('/api/queue/move', (req, res) => {
+        const { fromIndex, toIndex } = req.body;
+        if (typeof fromIndex !== 'number' || fromIndex < 0 || fromIndex >= radio.queue.length || 
+            typeof toIndex !== 'number' || toIndex < 0 || toIndex >= radio.queue.length) {
+            return res.status(400).json({ success: false, message: 'Index tidak valid' });
+        }
+        const [movedTrack] = radio.queue.splice(fromIndex, 1);
+        radio.queue.splice(toIndex, 0, movedTrack);
+        res.json({ success: true, message: `Lagu dipindahkan.` });
+    });
+
     // === FUNGSI BANTU CEK BENTROK JADWAL ===
     async function isOverlap(st, et, excludeId = null) {
         let startTime = parseInt(st.replace(':', ''));

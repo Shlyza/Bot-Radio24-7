@@ -211,12 +211,27 @@
                 if (data.queue.length > 0) {
                     data.queue.forEach((song, i) => {
                         const li = document.createElement('li');
-                        li.className = "p-3 bg-gray-700 rounded flex gap-3 items-center hover:bg-gray-600 transition-colors";
+                        li.className = "p-3 bg-gray-700 rounded flex gap-3 items-center hover:bg-gray-600 transition-colors group";
+                        
+                        const isFirst = i === 0;
+                        const isLast = i === data.queue.length - 1;
+                        
                         li.innerHTML = `
                             <span class="bg-gray-900 text-gray-400 font-bold px-3 py-1 rounded">${i + 1}</span>
                             <div class="flex-1 truncate">
                                 <p class="font-semibold text-white truncate">${song.title}</p>
                                 <p class="text-xs text-gray-400">${song.author}</p>
+                            </div>
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="moveQueue(${i}, ${i - 1})" class="text-gray-400 hover:text-white p-1" ${isFirst ? 'disabled class="opacity-30"' : ''}>
+                                    ⬆️
+                                </button>
+                                <button onclick="moveQueue(${i}, ${i + 1})" class="text-gray-400 hover:text-white p-1" ${isLast ? 'disabled class="opacity-30"' : ''}>
+                                    ⬇️
+                                </button>
+                                <button onclick="removeQueue(${i})" class="text-red-400 hover:text-red-300 p-1 ml-1" title="Hapus">
+                                    ❌
+                                </button>
                             </div>
                         `;
                         queueEl.appendChild(li);
@@ -284,6 +299,29 @@
                 await fetch('/api/controls/stop', { method: 'POST' });
                 fetchStatus();
             } catch(e) { console.error('Gagal stop:', e); }
+        }
+
+        // === FUNGSI MENGATUR ANTREAN ===
+        async function removeQueue(index) {
+            try {
+                await fetch('/api/queue/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index: index })
+                });
+                fetchStatus();
+            } catch(e) { console.error('Gagal menghapus antrean:', e); }
+        }
+
+        async function moveQueue(fromIndex, toIndex) {
+            try {
+                await fetch('/api/queue/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fromIndex: fromIndex, toIndex: toIndex })
+                });
+                fetchStatus(); // trigger refresh biar UI update langsung
+            } catch(e) { console.error('Gagal memindah antrean:', e); }
         }
 
         // === FUNGSI JADWAL HARIAN ===
