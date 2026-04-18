@@ -57,9 +57,19 @@
                     </p>
                 </div>
 
-                <!-- Bagian Kontrol Request Lagu -->
+                <!-- Bagian Kendali Radio, Volume & Request Lagu -->
                 <div class="mt-6 border-t border-gray-700 pt-4">
-                    <h3 class="text-lg font-semibold text-gray-300 mb-2">🎛️ Request Lagu (!play)</h3>
+                    <h3 class="text-lg font-semibold text-gray-300 mb-4">🎛️ Kendali Radio</h3>
+                    
+                    <!-- Volume Slider -->
+                    <div class="flex items-center gap-3 w-full mb-4 bg-gray-900 p-3 rounded-lg border border-gray-600">
+                        <span class="text-sm">🔉</span>
+                        <input type="range" id="global-volume" min="0" max="150" value="100" 
+                            class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" 
+                            onchange="changeBotVolume(this.value)" oninput="updateVolLabel(this.value)">
+                        <span class="text-xs text-gray-400 font-mono w-10 text-right" id="global-volume-label">100%</span>
+                    </div>
+
                     <div class="flex gap-2">
                         <input type="text" id="genre-input" placeholder="Masukkan judul lagu atau link YouTube..." 
                             class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
@@ -139,8 +149,18 @@
                 
                 window.currentActiveGenre = data.currentGenre; // Simpan untuk highlight tabel jadwal
                 document.getElementById('listeners').innerText = data.listenerCount + ' User';
-                document.getElementById('ping').innerText = `${data.botPing}ms / ${data.nodeStatus}`;
                 
+                // Ping Visual Indicator
+                const pingColor = data.botPing < 100 ? 'text-green-400' : (data.botPing < 200 ? 'text-yellow-400' : 'text-red-500');
+                document.getElementById('ping').innerHTML = `<span class="${pingColor}">${data.botPing}ms</span> / ${data.nodeStatus}`;
+                
+                // Sync Volume Slider if not being dragged
+                const volSlider = document.getElementById('global-volume');
+                if (volSlider && document.activeElement !== volSlider) {
+                    volSlider.value = data.volume;
+                    document.getElementById('global-volume-label').innerText = `${data.volume}%`;
+                }
+
                 const uptimeTotalSeconds = Math.floor(data.uptime);
                 const hours = Math.floor(uptimeTotalSeconds / 3600);
                 const minutes = Math.floor((uptimeTotalSeconds % 3600) / 60);
@@ -169,7 +189,7 @@
 
                     npEl.innerHTML = `
                         <div class="flex flex-col items-center">
-                            <img src="${thumbnail}" alt="Thumbnail" class="w-full h-40 object-cover rounded-lg shadow-md mb-4 border border-gray-600" onerror="this.src='https://via.placeholder.com/640x360.png?text=No+Thumbnail'">
+                            <img src="${thumbnail}" alt="Thumbnail" class="w-full aspect-video object-cover rounded-lg shadow-md mb-4 border border-gray-600" onerror="this.src='https://via.placeholder.com/640x360.png?text=No+Thumbnail'">
                             
                             <div class="w-full mb-3 text-center">
                                 <h3 class="text-xl font-bold text-white mb-1 line-clamp-1">${data.currentSong.title}</h3>
@@ -286,6 +306,20 @@
         fetchStatus();
 
         // === FUNGSI KONTROL BOT ===
+        function updateVolLabel(val) {
+            document.getElementById('global-volume-label').innerText = val + '%';
+        }
+
+        async function changeBotVolume(val) {
+            try {
+                await fetch('/api/controls/volume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ volume: parseInt(val) })
+                });
+            } catch(e) { console.error('Gagal mengubah volume:', e); }
+        }
+
         async function skipSong() {
             try {
                 await fetch('/api/controls/skip', { method: 'POST' });

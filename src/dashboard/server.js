@@ -34,6 +34,7 @@ module.exports = (radio, db, scheduler) => {
             currentGenre: radio.currentGenre,
             engine: radio.engine,
             songCount: radio.songCount,
+            volume: radio.volume,
             queue: radio.queue.map(q => q.info), 
             currentSong: radio.currentSong ? radio.currentSong.info : null,
             position: position,
@@ -60,6 +61,17 @@ module.exports = (radio, db, scheduler) => {
             res.json({ success: true, message: 'Bot radio berhasil dimatikan.' });
         } else {
             res.json({ success: false, message: 'Bot sudah offline.' });
+        }
+    });
+
+    // API Mengatur Volume
+    app.post('/api/controls/volume', (req, res) => {
+        const { volume } = req.body;
+        if (typeof volume === 'number') {
+            radio.setVolume(volume);
+            res.json({ success: true, volume: radio.volume });
+        } else {
+            res.status(400).json({ success: false, message: 'Volume tidak valid.' });
         }
     });
 

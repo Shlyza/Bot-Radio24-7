@@ -15,6 +15,22 @@ class RadioPlayer {
         // FITUR PLAY: Antrean lagu & status pemutar
         this.queue = [];
         this.isRadioPlaying = false; 
+        
+        // VOLUME KONTROL
+        this.volume = 100;
+    }
+
+    setVolume(level) {
+        this.volume = level;
+        if (this.player) {
+            // Pada Shoukaku v3/v4 untuk mengubah global volume:
+            if (typeof this.player.setGlobalVolume === 'function') {
+                this.player.setGlobalVolume(level);
+            } else if (this.player.filters) {
+                this.player.filters.volume = level / 100;
+                this.player.updateFilters();
+            }
+        }
     }
 
     async joinAndStart(channelId, guildId) {
@@ -30,6 +46,7 @@ class RadioPlayer {
             });
 
             console.log('[RADIO] Berhasil masuk Voice Channel via Lavalink!');
+            this.setVolume(this.volume); // Terapkan volume yang tersimpan saat ini
 
             this.player.on('end', (reason) => {
                 console.log('[DEBUG] Track End Reason:', reason ? reason.reason : 'Tidak ada');
