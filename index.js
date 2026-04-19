@@ -215,6 +215,30 @@ client.on('messageCreate', async message => {
         }
     }
 
+    // COMMAND: !eq
+    if (command === 'eq' || command === 'equalizer') {
+        const preset = args[0]?.toLowerCase();
+        const availableEQs = ['flat', 'bassboost', 'electronic', 'pop', 'rock', 'gaming', 'jernih', 'spotify'];
+
+        if (!preset) {
+            return message.reply(`🎛️ **Equalizer Saat Ini:** \`${radio.currentEQ}\`\n\n**Preset Tersedia:**\n${availableEQs.map(eq => `\`${eq}\``).join(', ')}\n\n*Gunakan: \`${prefix}eq <nama_preset>\`*`);
+        }
+
+        if (!availableEQs.includes(preset)) {
+            return message.reply(`❌ Preset tidak valid!\n**Pilih salah satu:** ${availableEQs.map(eq => `\`${eq}\``).join(', ')}`);
+        }
+
+        if (!radio.player) {
+            return message.reply(`❌ Bot sedang tidak memutar apapun (belum join VC).`);
+        }
+
+        if (radio.setEQ(preset)) {
+            message.reply(`🎛️ Equalizer berhasil diubah ke **${preset.toUpperCase()}**!`);
+        } else {
+            message.reply(`❌ Gagal mengubah equalizer.`);
+        }
+    }
+
     // COMMAND: !ping
     if (command === 'ping') {
         message.reply(`🏓 Pong! Latensi Discord: **${client.ws.ping}ms**\n📻 Mesin Aktif: **${radio.engine.toUpperCase()}**`);
@@ -238,6 +262,7 @@ client.on('messageCreate', async message => {
 🔹 **\`!clear\`** - Menghapus semua lagu di antrean request
 🔹 **\`!np\`** - Menampilkan info lagu yang sedang diputar
 🔹 **\`!volume <1-100>\`** - Mengatur besar volume suara (Alias: \`!vol\`)
+🔹 **\`!eq <preset>\`** - Mengubah preset equalizer (flat, bassboost, electronic, pop, rock, gaming, jernih, spotify)
 
 **📻 Perintah Radio & Sistem:**
 🔹 **\`!genre\`** - Melihat genre radio yang memutar otomatis saat ini

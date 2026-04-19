@@ -18,6 +18,79 @@ class RadioPlayer {
         
         // VOLUME KONTROL
         this.volume = 100;
+
+        // EQUALIZER
+        this.currentEQ = 'flat';
+    }
+
+    setEQ(presetName) {
+        if (!this.player) return false;
+        
+        const EQs = {
+            flat: [],
+            bassboost: [
+                { band: 0, gain: 0.2 }, { band: 1, gain: 0.15 }, { band: 2, gain: 0.1 },
+                { band: 3, gain: 0.05 }, { band: 4, gain: 0.0 }, { band: 5, gain: -0.05 },
+                { band: 6, gain: -0.1 }, { band: 7, gain: -0.1 }, { band: 8, gain: -0.1 },
+                { band: 9, gain: -0.1 }, { band: 10, gain: -0.1 }, { band: 11, gain: -0.1 },
+                { band: 12, gain: -0.1 }, { band: 13, gain: -0.1 }, { band: 14, gain: -0.1 }
+            ],
+            electronic: [
+                { band: 0, gain: 0.3 }, { band: 1, gain: 0.28 }, { band: 2, gain: 0.2 },
+                { band: 3, gain: 0.1 }, { band: 4, gain: 0.05 }, { band: 5, gain: -0.05 },
+                { band: 6, gain: -0.1 }, { band: 7, gain: -0.1 }, { band: 8, gain: 0.0 },
+                { band: 9, gain: 0.1 }, { band: 10, gain: 0.1 }, { band: 11, gain: 0.15 },
+                { band: 12, gain: 0.2 }, { band: 13, gain: 0.25 }, { band: 14, gain: 0.25 }
+            ],
+            pop: [
+                { band: 0, gain: -0.25 }, { band: 1, gain: -0.23 }, { band: 2, gain: -0.2 },
+                { band: 3, gain: -0.1 }, { band: 4, gain: 0.05 }, { band: 5, gain: 0.2 },
+                { band: 6, gain: 0.25 }, { band: 7, gain: 0.3 }, { band: 8, gain: 0.25 },
+                { band: 9, gain: 0.2 }, { band: 10, gain: 0.1 }, { band: 11, gain: -0.1 },
+                { band: 12, gain: -0.15 }, { band: 13, gain: -0.2 }, { band: 14, gain: -0.25 }
+            ],
+            rock: [
+                { band: 0, gain: 0.3 }, { band: 1, gain: 0.25 }, { band: 2, gain: 0.2 },
+                { band: 3, gain: 0.1 }, { band: 4, gain: -0.05 }, { band: 5, gain: -0.15 },
+                { band: 6, gain: -0.2 }, { band: 7, gain: -0.15 }, { band: 8, gain: -0.05 },
+                { band: 9, gain: 0.1 }, { band: 10, gain: 0.2 }, { band: 11, gain: 0.25 },
+                { band: 12, gain: 0.3 }, { band: 13, gain: 0.35 }, { band: 14, gain: 0.4 }
+            ],
+            gaming: [
+                { band: 0, gain: 0.2 }, { band: 1, gain: 0.1 }, { band: 2, gain: -0.1 },
+                { band: 3, gain: -0.2 }, { band: 4, gain: -0.1 }, { band: 5, gain: 0.0 },
+                { band: 6, gain: 0.05 }, { band: 7, gain: 0.1 }, { band: 8, gain: 0.1 },
+                { band: 9, gain: 0.15 }, { band: 10, gain: 0.15 }, { band: 11, gain: 0.2 },
+                { band: 12, gain: 0.2 }, { band: 13, gain: 0.25 }, { band: 14, gain: 0.25 }
+            ],
+            jernih: [
+                { band: 0, gain: -0.1 }, { band: 1, gain: -0.1 }, { band: 2, gain: -0.05 },
+                { band: 3, gain: 0.0 }, { band: 4, gain: 0.05 }, { band: 5, gain: 0.1 },
+                { band: 6, gain: 0.15 }, { band: 7, gain: 0.2 }, { band: 8, gain: 0.2 },
+                { band: 9, gain: 0.25 }, { band: 10, gain: 0.25 }, { band: 11, gain: 0.25 },
+                { band: 12, gain: 0.3 }, { band: 13, gain: 0.3 }, { band: 14, gain: 0.3 }
+            ],
+            spotify: [
+                { band: 0, gain: 0.15 }, { band: 1, gain: 0.1 }, { band: 2, gain: 0.05 },
+                { band: 3, gain: 0.0 }, { band: 4, gain: -0.05 }, { band: 5, gain: -0.1 },
+                { band: 6, gain: -0.1 }, { band: 7, gain: -0.05 }, { band: 8, gain: 0.0 },
+                { band: 9, gain: 0.05 }, { band: 10, gain: 0.1 }, { band: 11, gain: 0.15 },
+                { band: 12, gain: 0.15 }, { band: 13, gain: 0.2 }, { band: 14, gain: 0.2 }
+            ]
+        };
+
+        const eq = presetName.toLowerCase();
+        if (EQs.hasOwnProperty(eq)) {
+            // Shoukaku 4.x
+            if (typeof this.player.setEqualizer === 'function') {
+                this.player.setEqualizer(EQs[eq]);
+            } else if (typeof this.player.setFilters === 'function') {
+                this.player.setFilters({ equalizer: EQs[eq] });
+            }
+            this.currentEQ = eq;
+            return true;
+        }
+        return false;
     }
 
     setVolume(level) {
@@ -47,6 +120,7 @@ class RadioPlayer {
 
             console.log('[RADIO] Berhasil masuk Voice Channel via Lavalink!');
             this.setVolume(this.volume); // Terapkan volume yang tersimpan saat ini
+            this.setEQ(this.currentEQ); // Terapkan EQ yang tersimpan
 
             this.player.on('end', (reason) => {
                 console.log('[DEBUG] Track End Reason:', reason ? reason.reason : 'Tidak ada');
