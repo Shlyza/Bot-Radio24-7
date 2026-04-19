@@ -179,7 +179,14 @@ class RadioPlayer {
             // Cek apakah genre dari scheduler ini berupa Link URL 
             if (this.currentGenre.startsWith('http://') || this.currentGenre.startsWith('https://')) {
                 // HAPUS parameter ?t= atau ?si= dari link youtube biar plugin nggak bingung
-                query = this.currentGenre.split('?')[0]; 
+                query = this.currentGenre.split('?')[0];
+                
+                // Ubah youtu.be/ID menjadi pemicu yang 100% dipahami plugin youtube
+                if (query.includes('youtu.be/')) {
+                    const videoId = query.split('youtu.be/')[1];
+                    query = `https://www.youtube.com/watch?v=${videoId}`;
+                }
+                
                 console.log(`[RADIO] Scheduler menggunakan link langsung: ${query}`);
             } else {
                 const searchPrefix = this.engine === 'youtube' ? 'ytsearch:' : 'scsearch:';
