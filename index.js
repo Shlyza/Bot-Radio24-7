@@ -68,15 +68,7 @@ async function startBot() {
     // Jalankan fitur penjadwalan genre
     scheduler.start();
     
-    // Tunggu 2 detik biar kabel ke Lavalink kepasang sempurna sebelum auto-join
-    setTimeout(() => {
-        const channel = client.channels.cache.get(process.env.DEFAULT_VOICE_ID);
-        if (channel) {
-            radio.joinAndStart(channel.id, channel.guild.id);
-        } else {
-            console.log('[SYSTEM] Bot siap! Silakan ketik !join di server.');
-        }
-    }, 2000);
+    console.log('[SYSTEM] Bot siap! Menunggu Lavalink untuk memutar musik otomatis...');
 });
 
 client.on('messageCreate', async message => {
