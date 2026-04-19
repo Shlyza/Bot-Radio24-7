@@ -27,55 +27,70 @@ class RadioPlayer {
         if (!this.player) return false;
         
         const EQs = {
+            // Flat: Gak ada perubahan, suara asli bawaan lagu
             flat: [],
+
+            // Bassboost: Bass nendang tapi vokal tetep aman, nggak bikin pusing
             bassboost: [
-                { band: 0, gain: 0.2 }, { band: 1, gain: 0.15 }, { band: 2, gain: 0.1 },
-                { band: 3, gain: 0.05 }, { band: 4, gain: 0.0 }, { band: 5, gain: -0.05 },
-                { band: 6, gain: -0.1 }, { band: 7, gain: -0.1 }, { band: 8, gain: -0.1 },
-                { band: 9, gain: -0.1 }, { band: 10, gain: -0.1 }, { band: 11, gain: -0.1 },
-                { band: 12, gain: -0.1 }, { band: 13, gain: -0.1 }, { band: 14, gain: -0.1 }
+                { band: 0, gain: 0.15 }, { band: 1, gain: 0.10 }, { band: 2, gain: 0.05 },
+                { band: 3, gain: 0.0 }, { band: 4, gain: -0.02 }, { band: 5, gain: -0.02 },
+                { band: 6, gain: 0.0 }, { band: 7, gain: 0.0 }, { band: 8, gain: 0.0 },
+                { band: 9, gain: 0.0 }, { band: 10, gain: 0.0 }, { band: 11, gain: 0.0 },
+                { band: 12, gain: 0.0 }, { band: 13, gain: 0.0 }, { band: 14, gain: 0.0 }
             ],
+
+            // Electronic: Punchy di bawah, jernih di atas buat synth & drop
             electronic: [
-                { band: 0, gain: 0.3 }, { band: 1, gain: 0.28 }, { band: 2, gain: 0.2 },
-                { band: 3, gain: 0.1 }, { band: 4, gain: 0.05 }, { band: 5, gain: -0.05 },
-                { band: 6, gain: -0.1 }, { band: 7, gain: -0.1 }, { band: 8, gain: 0.0 },
-                { band: 9, gain: 0.1 }, { band: 10, gain: 0.1 }, { band: 11, gain: 0.15 },
-                { band: 12, gain: 0.2 }, { band: 13, gain: 0.25 }, { band: 14, gain: 0.25 }
+                { band: 0, gain: 0.10 }, { band: 1, gain: 0.08 }, { band: 2, gain: 0.05 },
+                { band: 3, gain: 0.0 }, { band: 4, gain: -0.02 }, { band: 5, gain: 0.0 },
+                { band: 6, gain: 0.02 }, { band: 7, gain: 0.02 }, { band: 8, gain: 0.04 },
+                { band: 9, gain: 0.05 }, { band: 10, gain: 0.06 }, { band: 11, gain: 0.08 },
+                { band: 12, gain: 0.08 }, { band: 13, gain: 0.08 }, { band: 14, gain: 0.08 }
             ],
+
+            // Pop: Vokal maju, instrumen lebih hangat
             pop: [
-                { band: 0, gain: -0.25 }, { band: 1, gain: -0.23 }, { band: 2, gain: -0.2 },
-                { band: 3, gain: -0.1 }, { band: 4, gain: 0.05 }, { band: 5, gain: 0.2 },
-                { band: 6, gain: 0.25 }, { band: 7, gain: 0.3 }, { band: 8, gain: 0.25 },
-                { band: 9, gain: 0.2 }, { band: 10, gain: 0.1 }, { band: 11, gain: -0.1 },
-                { band: 12, gain: -0.15 }, { band: 13, gain: -0.2 }, { band: 14, gain: -0.25 }
+                { band: 0, gain: 0.04 }, { band: 1, gain: 0.03 }, { band: 2, gain: 0.02 },
+                { band: 3, gain: 0.0 }, { band: 4, gain: 0.0 }, { band: 5, gain: 0.02 },
+                { band: 6, gain: 0.04 }, { band: 7, gain: 0.05 }, { band: 8, gain: 0.05 },
+                { band: 9, gain: 0.04 }, { band: 10, gain: 0.03 }, { band: 11, gain: 0.03 },
+                { band: 12, gain: 0.02 }, { band: 13, gain: 0.02 }, { band: 14, gain: 0.02 }
             ],
+
+            // Rock: Mid-range dipoles biar gitar dan drum lebih kerasa teksturnya
             rock: [
-                { band: 0, gain: 0.3 }, { band: 1, gain: 0.25 }, { band: 2, gain: 0.2 },
-                { band: 3, gain: 0.1 }, { band: 4, gain: -0.05 }, { band: 5, gain: -0.15 },
-                { band: 6, gain: -0.2 }, { band: 7, gain: -0.15 }, { band: 8, gain: -0.05 },
-                { band: 9, gain: 0.1 }, { band: 10, gain: 0.2 }, { band: 11, gain: 0.25 },
-                { band: 12, gain: 0.3 }, { band: 13, gain: 0.35 }, { band: 14, gain: 0.4 }
+                { band: 0, gain: 0.05 }, { band: 1, gain: 0.04 }, { band: 2, gain: 0.03 },
+                { band: 3, gain: 0.0 }, { band: 4, gain: -0.02 }, { band: 5, gain: -0.02 },
+                { band: 6, gain: 0.0 }, { band: 7, gain: 0.02 }, { band: 8, gain: 0.04 },
+                { band: 9, gain: 0.05 }, { band: 10, gain: 0.05 }, { band: 11, gain: 0.06 },
+                { band: 12, gain: 0.06 }, { band: 13, gain: 0.06 }, { band: 14, gain: 0.06 }
             ],
+
+            // Gaming: Sub-bass dipotong dikit, fokus ke frekuensi spasial (step, environment)
             gaming: [
-                { band: 0, gain: 0.2 }, { band: 1, gain: 0.1 }, { band: 2, gain: -0.1 },
-                { band: 3, gain: -0.2 }, { band: 4, gain: -0.1 }, { band: 5, gain: 0.0 },
-                { band: 6, gain: 0.05 }, { band: 7, gain: 0.1 }, { band: 8, gain: 0.1 },
-                { band: 9, gain: 0.15 }, { band: 10, gain: 0.15 }, { band: 11, gain: 0.2 },
-                { band: 12, gain: 0.2 }, { band: 13, gain: 0.25 }, { band: 14, gain: 0.25 }
+                { band: 0, gain: -0.05 }, { band: 1, gain: -0.05 }, { band: 2, gain: -0.03 },
+                { band: 3, gain: 0.0 }, { band: 4, gain: 0.0 }, { band: 5, gain: 0.02 },
+                { band: 6, gain: 0.04 }, { band: 7, gain: 0.06 }, { band: 8, gain: 0.08 },
+                { band: 9, gain: 0.10 }, { band: 10, gain: 0.10 }, { band: 11, gain: 0.12 },
+                { band: 12, gain: 0.12 }, { band: 13, gain: 0.10 }, { band: 14, gain: 0.10 }
             ],
+
+            // Jernih: Clarity nambah, nggak bikin kuping cepet capek
             jernih: [
-                { band: 0, gain: -0.1 }, { band: 1, gain: -0.1 }, { band: 2, gain: -0.05 },
-                { band: 3, gain: 0.0 }, { band: 4, gain: 0.05 }, { band: 5, gain: 0.1 },
-                { band: 6, gain: 0.15 }, { band: 7, gain: 0.2 }, { band: 8, gain: 0.2 },
-                { band: 9, gain: 0.25 }, { band: 10, gain: 0.25 }, { band: 11, gain: 0.25 },
-                { band: 12, gain: 0.3 }, { band: 13, gain: 0.3 }, { band: 14, gain: 0.3 }
+                { band: 0, gain: 0.02 }, { band: 1, gain: 0.02 }, { band: 2, gain: 0.0 },
+                { band: 3, gain: 0.0 }, { band: 4, gain: 0.0 }, { band: 5, gain: 0.02 },
+                { band: 6, gain: 0.03 }, { band: 7, gain: 0.04 }, { band: 8, gain: 0.05 },
+                { band: 9, gain: 0.06 }, { band: 10, gain: 0.07 }, { band: 11, gain: 0.08 },
+                { band: 12, gain: 0.09 }, { band: 13, gain: 0.10 }, { band: 14, gain: 0.10 }
             ],
+
+            // Spotify: Balance V-Shape ringan (Karakter pop-modern)
             spotify: [
-                { band: 0, gain: 0.15 }, { band: 1, gain: 0.1 }, { band: 2, gain: 0.05 },
-                { band: 3, gain: 0.0 }, { band: 4, gain: -0.05 }, { band: 5, gain: -0.1 },
-                { band: 6, gain: -0.1 }, { band: 7, gain: -0.05 }, { band: 8, gain: 0.0 },
-                { band: 9, gain: 0.05 }, { band: 10, gain: 0.1 }, { band: 11, gain: 0.15 },
-                { band: 12, gain: 0.15 }, { band: 13, gain: 0.2 }, { band: 14, gain: 0.2 }
+                { band: 0, gain: 0.08 }, { band: 1, gain: 0.06 }, { band: 2, gain: 0.04 },
+                { band: 3, gain: 0.0 }, { band: 4, gain: -0.02 }, { band: 5, gain: -0.02 },
+                { band: 6, gain: 0.0 }, { band: 7, gain: 0.02 }, { band: 8, gain: 0.03 },
+                { band: 9, gain: 0.04 }, { band: 10, gain: 0.05 }, { band: 11, gain: 0.06 },
+                { band: 12, gain: 0.07 }, { band: 13, gain: 0.08 }, { band: 14, gain: 0.08 }
             ]
         };
 
@@ -183,7 +198,7 @@ class RadioPlayer {
     }
 
     setEngine(newEngine) {
-        if (newEngine === 'youtube' || newEngine === 'soundcloud') {
+        if (newEngine === 'youtube' || newEngine === 'soundcloud' || newEngine === 'spotify') {
             this.engine = newEngine;
             this.history = []; 
             console.log(`[RADIO] Dialihkan ke mesin: ${newEngine.toUpperCase()}`);
@@ -263,8 +278,8 @@ class RadioPlayer {
                 
                 console.log(`[RADIO] Scheduler menggunakan link langsung: ${query}`);
             } else {
-                const searchPrefix = this.engine === 'youtube' ? 'ytsearch:' : 'scsearch:';
-                query = `${searchPrefix}${this.currentGenre} audio`;
+                const searchPrefix = this.engine === 'youtube' ? 'ytsearch:' : (this.engine === 'spotify' ? 'spsearch:' : 'scsearch:');
+                query = this.engine === 'spotify' ? `${searchPrefix}${this.currentGenre}` : `${searchPrefix}${this.currentGenre} audio`;
                 console.log(`[${this.engine.toUpperCase()}] Mencari: ${query}`);
             }
             
