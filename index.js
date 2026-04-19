@@ -32,7 +32,14 @@ const Nodes = [{
 const shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes);
 
 shoukaku.on('error', (_, error) => console.error('[LAVALINK ERROR]', error));
-shoukaku.on('ready', (name) => console.log(`[SYSTEM] Berhasil tersambung ke ${name}! Mesin siap tempur.`));
+shoukaku.on('ready', (name) => {
+    console.log(`[SYSTEM] Berhasil tersambung ke ${name}! Mesin siap tempur.`);
+    // Opsi: Coba join ulang otomatis saat Lavalink siap jika sebelumnya gagal
+    const channel = client.channels.cache.get(process.env.DEFAULT_VOICE_ID);
+    if (channel && radio && !radio.player) {
+        radio.joinAndStart(channel.id, channel.guild.id);
+    }
+});
 // ==========================================
 
 // Masukin shoukaku ke dalam RadioPlayer biar bisa dikendalikan
@@ -55,7 +62,7 @@ async function startBot() {
     require('./src/dashboard/server.js')(radio, db, scheduler);
     // ==========================================
 
-    client.once('ready', async () => {
+    client.once('clientReady', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     
     // Jalankan fitur penjadwalan genre
