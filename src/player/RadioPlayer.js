@@ -178,7 +178,8 @@ class RadioPlayer {
             let query;
             // Cek apakah genre dari scheduler ini berupa Link URL 
             if (this.currentGenre.startsWith('http://') || this.currentGenre.startsWith('https://')) {
-                query = this.currentGenre; // Langsung hajar link-nya (Playlist / Single Video)
+                // HAPUS parameter ?t= atau ?si= dari link youtube biar plugin nggak bingung
+                query = this.currentGenre.split('?')[0]; 
                 console.log(`[RADIO] Scheduler menggunakan link langsung: ${query}`);
             } else {
                 const searchPrefix = this.engine === 'youtube' ? 'ytsearch:' : 'scsearch:';
@@ -187,6 +188,9 @@ class RadioPlayer {
             }
             
             const result = await node.rest.resolve(query);
+
+            // !! DEBUG RESULT TERBUKA KARENA LAVALINK 4 NGESELIN !!
+            if (result) console.log(`[DEBUG RAW RESULT]`, JSON.stringify(result));
 
             if (!result || ['empty', 'error'].includes(result.loadType) || (!result.data && !result.tracks)) {
                 console.log(`[${this.engine.toUpperCase()}] Waduh, lagu nggak ketemu. Skip otomatis...`);
