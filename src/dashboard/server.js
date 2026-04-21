@@ -70,6 +70,14 @@ module.exports = (radio, db, scheduler) => {
         }
     });
 
+    app.post('/api/controls/reset', (req, res) => {
+        res.json({ success: true, message: 'Mesin bot sedang restart otomatis... Mohon tunggu!' });
+        setTimeout(() => {
+            if (radio.player) radio.reset();
+            process.exit(1); // Force exit biar auto-restart oleh host (Railway/PM2/Nodemon)
+        }, 1000);
+    });
+
     // API Mengatur Volume
     app.post('/api/controls/volume', (req, res) => {
         const { volume } = req.body;

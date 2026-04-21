@@ -172,6 +172,13 @@ client.on('messageCreate', async message => {
         message.reply(`🧹 Berhasil menghapus **${count}** lagu dari antrean! Radio akan kembali ke mode jadwal.`);
     }
 
+    if (command === 'reset') {
+        message.reply('🔄 Sedang mereset mesin bot sepenuhnya... Sistem akan nyala kembali dalam beberapa detik!').then(() => {
+            radio.reset();
+            process.exit(1); // Force exit biar auto-restart oleh host (Railway/PM2/Nodemon)
+        });
+    }
+
     if (command === 'genre') {
         message.reply(`📻 Genre aktif: **${radio.currentGenre}**`);
     }

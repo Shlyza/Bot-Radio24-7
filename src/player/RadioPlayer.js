@@ -433,6 +433,17 @@ class RadioPlayer {
 
         return respMessage;
     }
+
+    reset() {
+        this.queue = [];
+        this.history = [];
+        this.isRadioPlaying = false;
+        this.isPlaying = false;
+        if (this.player) {
+            this.player.stopTrack(); // Akan memicu playNext karena antrean kosong
+        }
+        console.log('[RADIO] Player audio telah direset.');
+    }
 }
 
 module.exports = RadioPlayer;

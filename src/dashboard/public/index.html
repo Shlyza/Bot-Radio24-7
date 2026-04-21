@@ -226,6 +226,9 @@
                                 <button onclick="stopBot()" class="flex-1 bg-red-900 hover:bg-red-800 text-red-100 py-2 px-2 rounded-lg text-sm font-semibold transition-colors border border-red-700">
                                     ⏹️ Stop
                                 </button>
+                                <button id="reset-btn" onclick="resetBot()" class="flex-1 bg-yellow-700 hover:bg-yellow-600 text-white py-2 px-2 rounded-lg text-sm font-semibold transition-colors border border-yellow-600">
+                                    🔄 Reset
+                                </button>
                                 <a href="${data.currentSong.uri}" target="_blank" class="flex-1 flex justify-center items-center bg-gray-700 hover:bg-gray-600 text-white px-2 py-2 rounded-lg text-sm font-semibold transition-colors border border-gray-600">🔗 URL</a>
                             </div>
                         </div>
@@ -344,6 +347,14 @@
                 await fetch('/api/controls/stop', { method: 'POST' });
                 fetchStatus();
             } catch(e) { console.error('Gagal stop:', e); }
+        }
+
+        async function resetBot() {
+            if(!confirm('Yakin ingin mereset pemutar audio? Antrean akan terhapus.')) return;
+            try {
+                await fetch('/api/controls/reset', { method: 'POST' });
+                fetchStatus();
+            } catch(e) { console.error('Gagal reset:', e); }
         }
 
         // === FUNGSI MENGATUR ANTREAN ===
