@@ -21,6 +21,33 @@ class RadioPlayer {
 
         // EQUALIZER
         this.currentEQ = 'flat';
+
+        // WATCHDOG ANTI-STUCK
+        this.lastPosition = 0;
+        this.stuckCount = 0;
+        setInterval(() => this.checkWatchdog(), 15000); // Cek setiap 15 detik
+    }
+
+    checkWatchdog() {
+        if (!this.player || !this.isPlaying) {
+            this.stuckCount = 0;
+            return;
+        }
+
+        // Kalau lagunya tertunda/macet (posisi audio di Lavalink tidak bergerak padahal isPlaying = true)
+        if (this.player.position > 0 && this.player.position === this.lastPosition) {
+            this.stuckCount++;
+            console.log(`[WATCHDOG] Posisi audio tidak bergerak... (${this.stuckCount}/4)`);
+            
+            if (this.stuckCount >= 4) { // Macet tanpa pergerakan selama 60 detik
+                console.log('[WATCHDOG] Bot terdeteksi NG-STUCK total! Mengirim sinyal AUTO-RESTART...');
+                process.exit(1); // Force exit biar merestart otomatis di Railway/PM2
+            }
+        } else {
+            this.stuckCount = 0;
+        }
+        
+        this.lastPosition = this.player.position || 0;
     }
 
     setEQ(presetName) {
