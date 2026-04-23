@@ -69,6 +69,21 @@ async function startBot() {
     scheduler.start();
     
     console.log('[SYSTEM] Bot siap! Menunggu Lavalink untuk memutar musik otomatis...');
+
+    // FITUR PESAN NOTIFIKASI USAI RESET
+    if (fs.existsSync('restart.tmp')) {
+        try {
+            const channelId = fs.readFileSync('restart.tmp', 'utf-8');
+            const channel = await client.channels.fetch(channelId);
+            if (channel) {
+                channel.send('✅ **Proses reset selesai!** Mesin bot telah kembali menyala dan antrean/riwayat sudah dibersihkan. Bot siap digunakan kembali! 🎶');
+            }
+        } catch (error) {
+            console.error('Gagal mengirim notif reset:', error.message);
+        } finally {
+            fs.unlinkSync('restart.tmp');
+        }
+    }
 });
 
 client.on('messageCreate', async message => {
@@ -102,11 +117,6 @@ client.on('messageCreate', async message => {
         }
 
         await radio.addToQueue(query, message);
-    }
-
-    if (command === 'leave') {
-        radio.leave();
-        message.reply('👋 Siap Pak! Mesin dimatikan, bot ijin pamit.');
     }
 
     // COMMAND: ?list / ?queue (Melihat dan Mengatur Antrean Request)
@@ -173,9 +183,12 @@ client.on('messageCreate', async message => {
     }
 
     if (command === 'reset') {
+        // Simpan id channel tempat pengguna memerintahkan reset agar dapat membalas sesudahnya
+        fs.writeFileSync('restart.tmp', message.channel.id);
+        
         message.reply('🔄 Sedang mereset mesin bot sepenuhnya... Sistem akan nyala kembali dalam beberapa detik!').then(() => {
             radio.reset();
-            process.exit(1); // Force exit biar auto-restart oleh host (Railway/PM2/Nodemon)
+            setTimeout(() => process.exit(1), 1000); // Force exit biar auto-restart oleh host (Railway/PM2/Nodemon)
         });
     }
 
@@ -273,9 +286,10 @@ client.on('messageCreate', async message => {
 **📻 Perintah Radio & Sistem:**
 🔹 **\`!genre\`** - Melihat genre radio yang memutar otomatis saat ini
 🔹 **\`!engine <youtube/soundcloud>\`** - Mengganti sumber pencarian lagu
-🔹 **\`!join\`** / **\`!leave\`** - Memanggil/mengeluarkan bot dari Voice Channel
+� **\`!join\`** - Memanggil bot masuk ke Voice Channel
 🔹 **\`!ping\`** - Cek latensi bot ke Discord
 🔹 **\`!jadwal\`** - Melihat daftar jadwal radio saat ini
+🔹 **\`!reset\`** - Mereset mesin bot jika musik macet/bermasalah
 🔹 **\`!help\`** - Menampilkan panduan lengkap ini
 
 ⏰ **JADWAL RADIO SAAT INI (WIB):**
