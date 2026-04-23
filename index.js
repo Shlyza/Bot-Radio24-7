@@ -268,21 +268,29 @@ client.on('messageCreate', async message => {
         const lines = [];
         for (let i = 0; i < schedules.length; i++) {
             const row = schedules[i];
-            let displayGenre = row.genre;
+            let displayGenre = row.genre.trim();
             
             if (displayGenre.startsWith('http://') || displayGenre.startsWith('https://')) {
                 try {
                     const node = radio.shoukaku.getIdealNode();
                     if (node) {
                         const result = await node.rest.resolve(displayGenre);
-                        if (result) {
-                            const isPlaylist = result.loadType === 'playlist';
-                            if (isPlaylist && result.data && result.data.info) {
-                                displayGenre = `Playlist: ${result.data.info.name}`;
+                        if (result && !['empty', 'error'].includes(result.loadType)) {
+                            if (['playlist', 'PLAYLIST_LOADED'].includes(result.loadType)) {
+                                const pName = result.data?.info?.name || result.playlistInfo?.name || 'Playlist';
+                                displayGenre = `Playlist: ${pName}`;
                             } else {
-                                const tracks = (result.data && result.data.tracks) ? result.data.tracks : (Array.isArray(result.data) ? result.data : []);
-                                if (tracks.length > 0) {
-                                    displayGenre = `🔗 ${tracks[0].info.title}`;
+                                let track;
+                                if (['track', 'TRACK_LOADED'].includes(result.loadType)) {
+                                    track = result.data || result;
+                                } else if (['search', 'SEARCH_RESULT'].includes(result.loadType)) {
+                                    track = (result.data || result.tracks || [])[0];
+                                } else {
+                                    track = Array.isArray(result.data) ? result.data[0] : (Array.isArray(result) ? result[0] : result.data);
+                                }
+                                
+                                if (track && track.info && track.info.title) {
+                                    displayGenre = `🔗 ${track.info.title}`;
                                 }
                             }
                         }
