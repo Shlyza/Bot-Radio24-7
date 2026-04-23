@@ -263,11 +263,44 @@ client.on('messageCreate', async message => {
         message.reply(`🏓 Pong! Latensi Discord: **${client.ws.ping}ms**\n📻 Mesin Aktif: **${radio.engine.toUpperCase()}**`);
     }
 
+    // Fungsi helper buat fetch judul dari URL secara on-the-fly biar estetik
+    const fetchScheduleTitles = async (schedules) => {
+        const lines = [];
+        for (let i = 0; i < schedules.length; i++) {
+            const row = schedules[i];
+            let displayGenre = row.genre;
+            
+            if (displayGenre.startsWith('http://') || displayGenre.startsWith('https://')) {
+                try {
+                    const node = radio.shoukaku.getIdealNode();
+                    if (node) {
+                        const result = await node.rest.resolve(displayGenre);
+                        if (result) {
+                            const isPlaylist = result.loadType === 'playlist';
+                            if (isPlaylist && result.data && result.data.info) {
+                                displayGenre = `Playlist: ${result.data.info.name}`;
+                            } else {
+                                const tracks = (result.data && result.data.tracks) ? result.data.tracks : (Array.isArray(result.data) ? result.data : []);
+                                if (tracks.length > 0) {
+                                    displayGenre = `🔗 ${tracks[0].info.title}`;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('[INFO] Gagal fetch title dari jadwal url', e.message);
+                }
+            }
+            lines.push(`**Sesi ${i + 1}** (${row.start_time}-${row.end_time}): \`${displayGenre}\``);
+        }
+        return lines.join('\n');
+    };
+
     // COMMAND: !help
     if (command === 'help') {
         try {
             const schedules = await db.all('SELECT * FROM schedules ORDER BY start_time ASC');
-            const scheduleInfo = schedules.map((row, index) => `**Sesi ${index + 1}** (${row.start_time}-${row.end_time}): \`${row.genre}\``).join('\n');
+            let scheduleInfo = await fetchScheduleTitles(schedules);
             
             const helpMessage = `
 🎶 **DISCORD RADIO BOT MENU** 🎶
@@ -309,7 +342,7 @@ Contoh: \`!gantijadwal 2 dangdut koplo\`
     if (command === 'jadwal') {
         try {
             const schedules = await db.all('SELECT * FROM schedules ORDER BY start_time ASC');
-            const scheduleInfo = schedules.map((row, index) => `**Sesi ${index + 1}** (${row.start_time}-${row.end_time}): \`${row.genre}\``).join('\n');
+            let scheduleInfo = await fetchScheduleTitles(schedules);
             
             message.reply(`⏰ **JADWAL RADIO SAAT INI (WIB):**\n\n${scheduleInfo}\n\n*Ganti jadwal ketik: \`${prefix}gantijadwal <nomor_sesi> <genre_atau_link>\`*`);
         } catch (error) {
