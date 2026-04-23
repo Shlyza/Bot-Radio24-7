@@ -7,6 +7,7 @@ class RadioPlayer {
         this.shoukaku = shoukaku;
         this.player = null; 
         this.currentGenre = 'lofi chill';
+        this.currentGenreName = 'lofi chill';
         this.engine = 'youtube'; // Udah aman pakai YouTube berkat Lavalink
         this.history = [];
         this.songCount = 0;
@@ -280,12 +281,6 @@ class RadioPlayer {
         // Kalau sampe sini, artinya antrean request kosong -> Lanjut mode Radio
         this.isRadioPlaying = true;
 
-        if (this.songCount > 0 && this.songCount % config.settings.djVoiceRate === 0 && !opts.isResume) {
-            await this.playDJVoice(`Masih di Discord Radio. Saat ini menggunakan mesin ${this.engine}. Selamat mendengarkan.`);
-            this.songCount++;
-            return;
-        }
-
         try {
             this.isPlaying = true;
             const node = this.shoukaku.getIdealNode();
@@ -323,10 +318,16 @@ class RadioPlayer {
             }
 
             let searchData = [];
+            let playlistName = null;
+            
             // Parse loadType Lavalink v4 + Plugin YT v1.18.0
             if (['playlist', 'search'].includes(result.loadType) || result.loadType === 'PLAYLIST_LOADED' || result.loadType === 'SEARCH_RESULT') {
                 searchData = result.data?.tracks || result.tracks || result.data || [];
                 if (!Array.isArray(searchData)) searchData = [];
+                // Coba format nama playlist jika ada
+                if (result.loadType === 'playlist' || result.loadType === 'PLAYLIST_LOADED') {
+                    playlistName = result.data?.info?.name || result.playlistInfo?.name;
+                }
             } else if (result.loadType === 'track' || result.loadType === 'TRACK_LOADED') {
                 searchData = [result.data || result];
             } else {
@@ -356,6 +357,17 @@ class RadioPlayer {
             this.currentSong = chosenSong;
 
             // ==========================================
+            // PERBARUI NAMA GENRE BILA MEMAKAI URL
+            // ==========================================
+            if (this.currentGenre.startsWith('http://') || this.currentGenre.startsWith('https://')) {
+                if (playlistName) {
+                    this.currentGenreName = `Playlist: ${playlistName}`;
+                } else if (chosenSong && chosenSong.info) {
+                    this.currentGenreName = `🔗 ${chosenSong.info.title}`;
+                }
+            }
+
+            // ==========================================
             // PERBAIKAN: Menggunakan { track: { encoded: ... } } (Lavalink v4)
             // ==========================================
             await this.player.playTrack({ track: { encoded: chosenSong.encoded } });
@@ -370,32 +382,10 @@ class RadioPlayer {
         }
     }
 
-    async playDJVoice(text) {
-        this.isPlaying = true;
-        const url = googleTTS.getAudioUrl(text, { lang: 'id', slow: false, host: 'https://translate.google.com' });
-        
-        try {
-            const node = this.shoukaku.getIdealNode();
-            const result = await node.rest.resolve(url); 
-            if (result && result.data) {
-                // ==========================================
-                // PERBAIKAN: Format DJ Voice juga dibungkus
-                // ==========================================
-                const trackData = result.loadType === 'track' ? result.data : result.data[0];
-                await this.player.playTrack({ track: { encoded: trackData.encoded } });
-                console.log(`[DJ] Berbicara...`);
-            } else {
-                throw new Error("Gagal load TTS");
-            }
-        } catch (error) {
-            this.isPlaying = false;
-            this.playNext(); 
-        }
-    }
-
     setGenre(newGenre) {
         if (this.currentGenre !== newGenre) {
             this.currentGenre = newGenre;
+            this.currentGenreName = newGenre; // Reset nama sesuai input
             console.log(`[RADIO] Genre ganti ke: ${newGenre}`);
             if (config.settings.skipOnGenreChange && this.player) {
                 this.player.stopTrack(); 

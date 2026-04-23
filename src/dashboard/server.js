@@ -14,10 +14,10 @@ module.exports = (radio, db, scheduler) => {
         let listenerCount = 0;
         try {
             // Hitung pendengar (member di Voice Channel - 1 bot)
-            if (radio.player && radio.player.connection) {
-                const channel = await radio.client.channels.fetch(radio.player.connection.channelId).catch(()=>null);
-                if (channel) {
-                    listenerCount = Math.max(0, channel.members.size - 1);
+            if (radio.player && radio.player.guildId) {
+                const guild = radio.client.guilds.cache.get(radio.player.guildId);
+                if (guild && guild.members.me.voice.channel) {
+                    listenerCount = Math.max(0, guild.members.me.voice.channel.members.size - 1);
                 }
             }
         } catch (e) {
@@ -36,7 +36,7 @@ module.exports = (radio, db, scheduler) => {
         res.json({
             isPlaying: radio.isPlaying,
             isRadioPlaying: radio.isRadioPlaying,
-            currentGenre: radio.currentGenre,
+            currentGenre: radio.currentGenreName, // Kirim nama genre yang sudah di-parse ke web
             engine: radio.engine,
             songCount: radio.songCount,
             volume: radio.volume,
