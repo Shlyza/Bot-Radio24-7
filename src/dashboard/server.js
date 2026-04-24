@@ -40,6 +40,7 @@ module.exports = (radio, db, scheduler) => {
             engine: radio.engine,
             songCount: radio.songCount,
             volume: radio.volume,
+            currentEQ: radio.currentEQ,
             queue: radio.queue.map(q => q.info), 
             currentSong: radio.currentSong ? radio.currentSong.info : null,
             position: position,
@@ -51,7 +52,31 @@ module.exports = (radio, db, scheduler) => {
         });
     });
 
-    // API Kontrol Player: Skip & Stop
+    // API Kontrol Player: Skip, Stop, & Join
+    app.post('/api/controls/join', (req, res) => {
+        if (!radio.player) {
+            const channelId = process.env.DEFAULT_VOICE_ID;
+            const channel = radio.client.channels.cache.get(channelId);
+            
+            if (channel) {
+                radio.joinAndStart(channel.id, channel.guild.id);
+                res.json({ success: true, message: 'Bot berhasil join voice channel!' });
+            } else {
+                // Fallback cari voice channel pertama jika ID tidak sesuai
+                const guild = radio.client.guilds.cache.first();
+                const fallbackChannel = guild ? guild.channels.cache.find(c => c.isVoiceBased()) : null;
+                if (fallbackChannel) {
+                    radio.joinAndStart(fallbackChannel.id, fallbackChannel.guild.id);
+                    res.json({ success: true, message: 'Bot berhasil join voice channel!' });
+                } else {
+                    res.json({ success: false, message: 'Gagal mencari voice channel (Bot tidak ada akses).' });
+                }
+            }
+        } else {
+            res.json({ success: false, message: 'Bot sudah online di Voice Channel.' });
+        }
+    });
+
     app.post('/api/controls/skip', (req, res) => {
         if (radio.player) {
             radio.player.stopTrack(); // Memicu playNext otomatis
@@ -89,6 +114,17 @@ module.exports = (radio, db, scheduler) => {
         }
     });
 
+    // API Mengubah EQ
+    app.post('/api/controls/eq', (req, res) => {
+        const { eq } = req.body;
+        if (eq) {
+            const success = radio.setEQ(eq);
+            res.json({ success: success, currentEQ: radio.currentEQ });
+        } else {
+            res.status(400).json({ success: false, message: 'Preset EQ dibutuhkan.' });
+        }
+    });
+
     // API untuk merequest lagu langsung ke antrean (seperti command !play) lewat dashboard
     app.post('/api/play', async (req, res) => {
         const { query } = req.body;
@@ -105,6 +141,43 @@ module.exports = (radio, db, scheduler) => {
             res.json({ success: !isError, message: addResult.replace(/[*#]/g, '') });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
+        }
+    });
+
+    // API Mengirim Pesan Teks
+    app.post('/api/chat', async (req, res) => {
+        const { message } = req.body;
+        if (!message) return res.status(400).json({ success: false, message: 'Pesan kosong!' });
+        
+        try {
+            // Kita coba kirim ke channel tempat bot berada, atau cari text channel pertama
+            let targetChannelId = null;
+
+            if (radio.player) {
+                targetChannelId = radio.player.channelId;
+            } else {
+                targetChannelId = process.env.DEFAULT_VOICE_ID;
+            }
+
+            let channel = radio.client.channels.cache.get(targetChannelId);
+
+            // Jika channel utamanya bukan channel yang bisa dichat (atau ga ada), cari fallback Teks
+            if (!channel || (!channel.isTextBased() && !channel.members)) {
+                const guild = radio.client.guilds.cache.first();
+                if (guild) {
+                    channel = guild.channels.cache.find(c => c.isTextBased());
+                }
+            }
+
+            if (channel && channel.isTextBased()) {
+                await channel.send('💬 **[Web Admin]:** ' + message);
+                res.json({ success: true, message: 'Pesan terkirim ke Discord!' });
+            } else {
+                res.status(400).json({ success: false, message: 'Gagal mencari channel Discord.' });
+            }
+        } catch (error) {
+            console.error('Error send chat:', error);
+            res.status(500).json({ success: false, message: 'Gagal mengirim pesan.' });
         }
     });
 

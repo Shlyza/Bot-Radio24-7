@@ -95,15 +95,6 @@ client.on('messageCreate', async message => {
     const args = message.content.slice(prefix.length).split(/ +/);
     const command = args.shift().toLowerCase();
 
-    if (command === 'join') {
-        if (message.member.voice.channel) {
-            radio.joinAndStart(message.member.voice.channel.id, message.guild.id);
-            message.reply('✅ Bergabung ke channel pakai mesin Lavalink!');
-        } else {
-            message.reply('❌ Masuk voice channel dulu, Pak!');
-        }
-    }
-
     // COMMAND: ?play [judul_or_link]
     if (command === 'play' || command === 'p') {
         const query = args.join(' ');
@@ -226,11 +217,15 @@ client.on('messageCreate', async message => {
     // COMMAND: !volume
     if (command === 'volume' || command === 'vol') {
         const vol = parseInt(args[0]);
-        if (!vol || vol < 1 || vol > 100) return message.reply('🔊 Masukkan angka dari 1 sampai 100.');
+        if (!vol || vol < 1 || vol > 150) return message.reply('🔊 Masukkan angka dari 1 sampai 150.');
         
         if (radio.player) {
-            radio.player.setGlobalVolume(vol);
+            radio.setVolume(vol);
             message.reply(`🔊 Volume diatur menjadi **${vol}%**`);
+        } else {
+            // Simpan juga kalau belum play (jadi saat player dibikin, terpakai nilainya)
+            radio.setVolume(vol);
+            message.reply(`🔊 Preferensi volume disimpan di **${vol}%**`);
         }
     }
 
@@ -327,7 +322,6 @@ client.on('messageCreate', async message => {
 **📻 Perintah Radio & Sistem:**
 🔹 **\`!genre\`** - Melihat genre radio yang memutar otomatis saat ini
 🔹 **\`!engine <youtube/soundcloud>\`** - Mengganti sumber pencarian lagu
-� **\`!join\`** - Memanggil bot masuk ke Voice Channel
 🔹 **\`!ping\`** - Cek latensi bot ke Discord
 🔹 **\`!jadwal\`** - Melihat daftar jadwal radio saat ini
 🔹 **\`!reset\`** - Mereset mesin bot jika musik macet/bermasalah

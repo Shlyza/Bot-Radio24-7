@@ -289,13 +289,20 @@ class RadioPlayer {
             let query;
             // Cek apakah genre dari scheduler ini berupa Link URL 
             if (this.currentGenre.startsWith('http://') || this.currentGenre.startsWith('https://')) {
-                // HAPUS parameter ?t= atau ?si= dari link youtube biar plugin nggak bingung
-                query = this.currentGenre.split('?')[0];
-                
-                // Ubah youtu.be/ID menjadi pemicu yang 100% dipahami plugin youtube
-                if (query.includes('youtu.be/')) {
-                    const videoId = query.split('youtu.be/')[1];
-                    query = `https://www.youtube.com/watch?v=${videoId}`;
+                // HAPUS parameter ?si= atau penanda tracking doang pakai URL API, bukan di split "?" mentahan
+                try {
+                    const urlObj = new URL(this.currentGenre);
+                    urlObj.searchParams.delete('si');
+                    urlObj.searchParams.delete('t');
+                    query = urlObj.toString();
+                    
+                    // Kalau linknya youtu.be (shortlink), jadikan format standar watch?v=
+                    if (urlObj.hostname === 'youtu.be') {
+                        const videoId = urlObj.pathname.slice(1);
+                        query = `https://www.youtube.com/watch?v=${videoId}`;
+                    }
+                } catch(e) {
+                    query = this.currentGenre; // fallback aman jika error parsing
                 }
                 
                 console.log(`[RADIO] Scheduler menggunakan link langsung: ${query}`);
