@@ -176,29 +176,30 @@
                     ? '<span class="text-green-400">🟢 Mengudara</span>' 
                     : '<span class="text-red-400">🔴 Berhenti</span>';
                 
-                document.getElementById('genre').innerText = data.currentGenre;
-                document.getElementById('engine').innerText = data.engine.toUpperCase();
-                document.getElementById('song-count').innerText = data.songCount;
+                document.getElementById('genre').innerText = data.currentGenre || '-';
+                document.getElementById('engine').innerText = data.engine ? data.engine.toUpperCase() : '-';
+                document.getElementById('song-count').innerText = data.songCount || 0;
                 
-                window.currentActiveGenre = data.currentGenre; // Simpan untuk highlight tabel jadwal
-                document.getElementById('listeners').innerText = data.listenerCount + ' User';
+                window.currentActiveGenre = data.currentGenre || ''; // Simpan untuk highlight tabel jadwal
+                document.getElementById('listeners').innerText = (data.listenerCount || 0) + ' User';
                 
                 // Ping Visual Indicator
-                const pingBotColor = data.botPing < 100 ? 'text-green-400' : (data.botPing < 200 ? 'text-yellow-400' : 'text-red-500');
-                document.getElementById('ping-bot').innerHTML = `<span class="${pingBotColor}">${data.botPing}ms</span>`;
+                const botPing = data.botPing || 0;
+                const pingBotColor = botPing < 100 ? 'text-green-400' : (botPing < 200 ? 'text-yellow-400' : 'text-red-500');
+                document.getElementById('ping-bot').innerHTML = `<span class="${pingBotColor}">${botPing}ms</span>`;
 
-                if (data.voicePing > 0) {
+                if (data.voicePing && data.voicePing > 0) {
                     const pingVoiceColor = data.voicePing < 50 ? 'text-green-400' : (data.voicePing < 120 ? 'text-yellow-400' : 'text-red-500');
-                    document.getElementById('ping-voice').innerHTML = `<span class="${pingVoiceColor}">${data.voicePing}ms</span> / ${data.nodeStatus}`;
+                    document.getElementById('ping-voice').innerHTML = `<span class="${pingVoiceColor}">${data.voicePing}ms</span> / ${data.nodeStatus || '-'}`;
                 } else {
-                    document.getElementById('ping-voice').innerHTML = `<span class="text-gray-500">Idle</span> / ${data.nodeStatus}`;
+                    document.getElementById('ping-voice').innerHTML = `<span class="text-gray-500">Idle</span> / ${data.nodeStatus || '-'}`;
                 }
                 
                 // Sync Volume Slider if not being dragged
                 const volSlider = document.getElementById('global-volume');
                 if (volSlider && document.activeElement !== volSlider) {
-                    volSlider.value = data.volume;
-                    document.getElementById('global-volume-label').innerText = `${data.volume}%`;
+                    volSlider.value = data.volume || 100;
+                    document.getElementById('global-volume-label').innerText = `${data.volume || 100}%`;
                 }
 
                 // Sync EQ Dropdown if not being interacted
@@ -213,7 +214,7 @@
                     }
                 }
 
-                const uptimeTotalSeconds = Math.floor(data.uptime);
+                const uptimeTotalSeconds = data.uptime ? Math.floor(data.uptime) : 0;
                 const hours = Math.floor(uptimeTotalSeconds / 3600);
                 const minutes = Math.floor((uptimeTotalSeconds % 3600) / 60);
                 const seconds = uptimeTotalSeconds % 60;
@@ -227,6 +228,7 @@
                         : '<span class="bg-pink-600 text-xs px-2 py-1 rounded-full uppercase ml-1">Request User</span>';
 
                     const formatTime = (ms) => {
+                        if (!ms || isNaN(ms)) return '00:00';
                         const totalS = Math.floor(ms / 1000);
                         const m = Math.floor(totalS / 60);
                         const s = totalS % 60;
@@ -235,9 +237,11 @@
                     
                     const durationStr = formatTime(data.currentSong.length);
                     const positionStr = formatTime(data.position);
-                    const progressPercent = Math.min(100, Math.max(0, (data.position / data.currentSong.length) * 100));
+                    const lengthNum = data.currentSong.length || 1;
+                    const posNum = data.position || 0;
+                    const progressPercent = Math.min(100, Math.max(0, (posNum / lengthNum) * 100));
                     
-                    const thumbnail = data.currentSong.artworkUrl || `https://img.youtube.com/vi/${data.currentSong.identifier}/mqdefault.jpg`;
+                    const thumbnail = data.currentSong.artworkUrl || (data.currentSong.identifier ? `https://img.youtube.com/vi/${data.currentSong.identifier}/mqdefault.jpg` : `https://via.placeholder.com/640x360.png?text=No+Thumbnail`);
 
                     npEl.innerHTML = `
                         <div class="flex flex-col items-center">
@@ -291,23 +295,24 @@
                 }
 
                 // Update Queue List
-                document.getElementById('queue-length').innerText = data.queue.length;
+                const safeQueue = data.queue || [];
+                document.getElementById('queue-length').innerText = safeQueue.length;
                 const queueEl = document.getElementById('queue-list');
                 queueEl.innerHTML = '';
                 
-                if (data.queue.length > 0) {
-                    data.queue.forEach((song, i) => {
+                if (safeQueue.length > 0) {
+                    safeQueue.forEach((song, i) => {
                         const li = document.createElement('li');
                         li.className = "p-3 bg-gray-700 rounded flex gap-3 items-center hover:bg-gray-600 transition-colors group";
                         
                         const isFirst = i === 0;
-                        const isLast = i === data.queue.length - 1;
+                        const isLast = i === safeQueue.length - 1;
                         
                         li.innerHTML = `
                             <span class="bg-gray-900 text-gray-400 font-bold px-3 py-1 rounded">${i + 1}</span>
                             <div class="flex-1 truncate">
-                                <p class="font-semibold text-white truncate">${song.title}</p>
-                                <p class="text-xs text-gray-400">${song.author}</p>
+                                <p class="font-semibold text-white truncate">${song.title || 'Unknown Title'}</p>
+                                <p class="text-xs text-gray-400">${song.author || 'Unknown Author'}</p>
                             </div>
                             <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onclick="moveQueue(${i}, ${i - 1})" class="text-gray-400 hover:text-white p-1" ${isFirst ? 'disabled class="opacity-30"' : ''}>
