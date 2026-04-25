@@ -253,6 +253,30 @@ client.on('messageCreate', async message => {
         }
     }
 
+    // COMMAND: !mode / !filter (Spatial & Reverb)
+    if (command === 'mode' || command === 'filter') {
+        const mode = args[0]?.toLowerCase();
+        const availableModes = ['flat', 'spatial', 'reverb'];
+
+        if (!mode) {
+            return message.reply(`🎧 **Mode Audio Saat Ini:** \`${radio.currentMode}\`\n\n**Mode Tersedia:**\n${availableModes.map(m => `\`${m}\``).join(', ')}\n\n*Gunakan: \`${prefix}mode <nama_mode>\`*`);
+        }
+
+        if (!availableModes.includes(mode)) {
+            return message.reply(`❌ Mode audio tidak valid!\n**Pilih salah satu:** ${availableModes.map(m => `\`${m}\``).join(', ')}`);
+        }
+
+        if (!radio.player) {
+            return message.reply(`❌ Bot sedang tidak memutar apapun (belum join VC).`);
+        }
+
+        if (radio.setAudioMode(mode)) {
+            message.reply(`🎧 Mode audio berhasil diubah ke **${mode.toUpperCase()}**!`);
+        } else {
+            message.reply(`❌ Gagal mengubah mode audio.`);
+        }
+    }
+
     // COMMAND: !ping
     if (command === 'ping') {
         message.reply(`🏓 Pong! Latensi Discord: **${client.ws.ping}ms**\n📻 Mesin Aktif: **${radio.engine.toUpperCase()}**`);
