@@ -101,6 +101,16 @@
                         </select>
                     </div>
 
+                    <!-- Audio Mode Selector (Spatial/Reverb) -->
+                    <div class="flex items-center gap-3 w-full mb-4 bg-gray-900 p-3 rounded-lg border border-gray-600">
+                        <span class="text-sm">🎧 Mode</span>
+                        <select id="audio-mode" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-indigo-500" onchange="changeBotMode(this.value)">
+                            <option value="flat">Normal (Flat)</option>
+                            <option value="spatial">Spatial (8D Audio)</option>
+                            <option value="reverb">Concert Hall (Reverb)</option>
+                        </select>
+                    </div>
+
                     <div class="flex gap-2">
                         <input type="text" id="genre-input" placeholder="Masukkan judul lagu atau link YouTube..." 
                             class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
@@ -235,6 +245,12 @@
                     } else {
                         eqDropdown.value = data.currentEQ || "flat";
                     }
+                }
+
+                // Sync Audio Mode Dropdown
+                const modeDropdown = document.getElementById('audio-mode');
+                if (modeDropdown && document.activeElement !== modeDropdown) {
+                    modeDropdown.value = data.currentMode || "flat";
                 }
 
                 const uptimeTotalSeconds = data.uptime ? Math.floor(data.uptime) : 0;
@@ -517,6 +533,17 @@
                 });
                 fetchStatus();
             } catch(e) { console.error('Gagal mengubah EQ:', e); }
+        }
+
+        async function changeBotMode(val) {
+            try {
+                await fetch('/api/controls/mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: val })
+                });
+                fetchStatus();
+            } catch(e) { console.error('Gagal mengubah Mode Audio:', e); }
         }
 
         async function skipSong() {

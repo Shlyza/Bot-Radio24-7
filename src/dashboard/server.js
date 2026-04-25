@@ -41,6 +41,7 @@ module.exports = (radio, db, scheduler) => {
             songCount: radio.songCount,
             volume: radio.volume,
             currentEQ: radio.currentEQ,
+            currentMode: radio.currentMode,
             loopMode: radio.loopMode || 'off', // 'off', 'single', 'queue'
             playbackHistory: radio.playbackHistory || [],
             queue: radio.queue.map(q => q.info), 
@@ -124,6 +125,17 @@ module.exports = (radio, db, scheduler) => {
             res.json({ success: success, currentEQ: radio.currentEQ });
         } else {
             res.status(400).json({ success: false, message: 'Preset EQ dibutuhkan.' });
+        }
+    });
+
+    // API Mengubah Audio Mode (Spatial/Reverb)
+    app.post('/api/controls/mode', (req, res) => {
+        const { mode } = req.body;
+        if (mode) {
+            const success = radio.setAudioMode(mode);
+            res.json({ success: success, currentMode: radio.currentMode });
+        } else {
+            res.status(400).json({ success: false, message: 'Mode audio dibutuhkan.' });
         }
     });
 

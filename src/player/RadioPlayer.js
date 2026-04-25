@@ -24,8 +24,9 @@ class RadioPlayer {
         // VOLUME KONTROL
         this.volume = 100;
 
-        // EQUALIZER
+        // EQUALIZER & AUDIO MODE
         this.currentEQ = 'flat';
+        this.currentMode = 'flat';
 
         // WATCHDOG ANTI-STUCK
         this.lastPosition = 0;
@@ -128,16 +129,50 @@ class RadioPlayer {
 
         const eq = presetName.toLowerCase();
         if (EQs.hasOwnProperty(eq)) {
-            // Shoukaku 4.x
-            if (typeof this.player.setEqualizer === 'function') {
-                this.player.setEqualizer(EQs[eq]);
-            } else if (typeof this.player.setFilters === 'function') {
-                this.player.setFilters({ equalizer: EQs[eq] });
-            }
             this.currentEQ = eq;
+            this.applyAllFilters(EQs[eq]);
             return true;
         }
         return false;
+    }
+
+    setAudioMode(modeName) {
+        if (!this.player) return false;
+        const validModes = ['flat', 'spatial', 'reverb'];
+        const mode = modeName.toLowerCase();
+        
+        if (validModes.includes(mode)) {
+            this.currentMode = mode;
+            // Kirim EQs kosong (null) karena applyAllFilters akan ambil ulang dari re-call kalau butuh.
+            // Biar gampang, panggil setEQ aja ulang tapi pakai setting saat ini, biar dirender ulang bareng filter mode.
+            this.setEQ(this.currentEQ);
+            return true;
+        }
+        return false;
+    }
+
+    applyAllFilters(activeEQ) {
+        if (!this.player) return;
+
+        let filters = {};
+
+        // 1. Set Equalizer
+        if (activeEQ) {
+            filters.equalizer = activeEQ;
+        }
+
+        // 2. Set Modifikasi (Spatial/Reverb)
+        if (this.currentMode === 'spatial') {
+            filters.rotation = { rotationHz: 0.15 };
+            filters.tremolo = { frequency: 2.0, depth: 0.1 };
+        } else if (this.currentMode === 'reverb') {
+            filters.karaoke = { level: 1.0, monoLevel: 1.0, filterBand: 220.0, filterWidth: 100.0 };
+        }
+
+        // Terapkan ke Shoukaku Player
+        if (typeof this.player.setFilters === 'function') {
+            this.player.setFilters(filters);
+        }
     }
 
     setVolume(level) {
