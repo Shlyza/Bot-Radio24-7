@@ -154,8 +154,9 @@ module.exports = (radio, db, scheduler) => {
             let targetChannelId = null;
 
             if (radio.player) {
-                targetChannelId = radio.player.channelId;
-            } else {
+                targetChannelId = radio.player.connection ? radio.player.connection.channelId : radio.player.channelId;
+            }
+            if (!targetChannelId) {
                 targetChannelId = process.env.DEFAULT_VOICE_ID;
             }
 
