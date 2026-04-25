@@ -41,6 +41,8 @@ module.exports = (radio, db, scheduler) => {
             songCount: radio.songCount,
             volume: radio.volume,
             currentEQ: radio.currentEQ,
+            loopMode: radio.loopMode || 'off', // 'off', 'single', 'queue'
+            playbackHistory: radio.playbackHistory || [],
             queue: radio.queue.map(q => q.info), 
             currentSong: radio.currentSong ? radio.currentSong.info : null,
             position: position,
@@ -123,6 +125,23 @@ module.exports = (radio, db, scheduler) => {
         } else {
             res.status(400).json({ success: false, message: 'Preset EQ dibutuhkan.' });
         }
+    });
+
+    // API Mengubah Loop Mode
+    app.post('/api/controls/loop', (req, res) => {
+        const { mode } = req.body;
+        if (radio.setLoopMode(mode)) {
+            res.json({ success: true, mode: radio.loopMode });
+        } else {
+            res.status(400).json({ success: false, message: 'Mode loop tidak valid. Gunakan off, single, atau queue.' });
+        }
+    });
+
+    // API Shuffle Antrean
+    app.post('/api/controls/shuffle', (req, res) => {
+        if (!radio.player) return res.status(400).json({ success: false, message: 'Bot offline' });
+        radio.shuffleQueue();
+        res.json({ success: true, message: 'Antrean berhasil diacak!' });
     });
 
     // API untuk merequest lagu langsung ke antrean (seperti command !play) lewat dashboard

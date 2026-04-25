@@ -17,6 +17,10 @@ class RadioPlayer {
         this.queue = [];
         this.isRadioPlaying = false; 
         
+        // FITUR ADVANCED: LOOP & HISTORY
+        this.loopMode = 'off'; // 'off' | 'single' | 'queue'
+        this.playbackHistory = []; // Riwayat 10 lagu yang baru diputar
+
         // VOLUME KONTROL
         this.volume = 100;
 
@@ -171,9 +175,30 @@ class RadioPlayer {
                 // Pastikan format alasan (reason) selalu UPPERCASE agar aman di Shoukaku v3 dan v4
                 const endReason = reason && reason.reason ? reason.reason.toUpperCase() : 'UNKNOWN';
 
+                // Tambahkan ke History
+                if (this.currentSong && endReason !== 'REPLACED') {
+                    this.playbackHistory.unshift({
+                        title: this.currentSong.info.title,
+                        author: this.currentSong.info.author,
+                        url: this.currentSong.info.uri
+                    });
+                    if (this.playbackHistory.length > 10) this.playbackHistory.pop();
+                }
+
                 // Cegah loop jika track diganti secara otomatis oleh playTrack()
                 if (endReason === 'REPLACED') return;
                 
+                // HANDLE LOOPING (Mode Single & Queue)
+                if (endReason !== 'STOPPED' && this.currentSong) {
+                    if (this.loopMode === 'single') {
+                        // Taruh kembali di paling depan antrean persis
+                        this.queue.unshift(this.currentSong);
+                    } else if (this.loopMode === 'queue' && !this.isRadioPlaying) {
+                        // Taruh di paling belakang antrean (Hanya kalau track request pengguna)
+                        this.queue.push(this.currentSong);
+                    }
+                }
+
                 // Kalau lagu full album tiba-tiba berhenti padahal belum selesai
                 let isPremature = false;
                 let resumePosition = 0;
@@ -213,6 +238,24 @@ class RadioPlayer {
             this.playNext();
         } catch (error) {
             console.error('[CRITICAL] Gagal Join:', error.message);
+        }
+    }
+
+    // FITUR ADVANCED: Mengatur Mode Loop (off, single, queue)
+    setLoopMode(mode) {
+        if (['off', 'single', 'queue'].includes(mode)) {
+            this.loopMode = mode;
+            return true;
+        }
+        return false;
+    }
+
+    // FITUR ADVANCED: Mengacak antrean request pengguna
+    shuffleQueue() {
+        if (this.queue.length <= 1) return;
+        for (let i = this.queue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.queue[i], this.queue[j]] = [this.queue[j], this.queue[i]];
         }
     }
 

@@ -1,193 +1,4 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radio Bot Dashboard</title>
-    <!-- Kita pakai Tailwind CSS agar tampilannya modern dan cantik tanpa ngoding CSS panjang -->
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-900 text-white p-6 font-sans">
-    
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-4xl font-bold text-indigo-400 mb-8 text-center">📻 Bot Radio Dashboard</h1>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <!-- Kolom Kiri: Now Playing -->
-            <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
-                <h2 class="text-xl font-semibold text-gray-300 mb-4">🎵 Sedang Diputar</h2>
-                
-                <div id="now-playing" class="text-center py-4 border-b border-gray-700 pb-6 mb-4">
-                    <p class="text-gray-400 italic">Memuat data bot...</p>
-                </div>
-
-                <div id="advanced-controls" class="hidden">
-                    <h3 class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">🔀 Advanced Toggles</h3>
-                    <div class="flex gap-2">
-                        <button id="btn-loop" onclick="toggleLoop()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-2 rounded-lg text-xs font-semibold transition-colors border border-gray-600 flex justify-center items-center gap-1">
-                            🔁 Loop: Off
-                        </button>
-                        <button onclick="shuffleQueue()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-2 rounded-lg text-xs font-semibold transition-colors border border-gray-600 flex justify-center items-center gap-1">
-                            🔀 Shuffle
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kolom Kanan: Info Sistem -->
-            <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
-                <h2 class="text-xl font-semibold text-gray-300 mb-4">ℹ️ Info Sistem</h2>
-                <div class="space-y-3">
-                    <p class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400">Status Bot</span>
-                        <span id="status" class="font-bold">-</span>
-                    </p>
-                    <p class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400">Genre Terjadwal</span>
-                        <span id="genre" class="font-semibold text-indigo-300">-</span>
-                    </p>
-                    <p class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400">Mesin Pencari (Engine)</span>
-                        <span id="engine" class="font-semibold text-red-400">-</span>
-                    </p>
-                    <p class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400">Total Lagu Diputar</span>
-                        <span id="song-count" class="font-semibold">-</span>
-                    </p>
-                    <p class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400">Pendengar (Voice)</span>
-                        <span id="listeners" class="font-semibold text-green-300">0</span>
-                    </p>
-                    <p class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400" title="Bot to Discord Text API Ping">Ping Bot (Teks)</span>
-                        <span id="ping-bot" class="font-semibold">-</span>
-                    </p>
-                    <p class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400" title="Lavalink to Discord Voice Server Ping">Ping Suara (Voice)</span>
-                        <span id="ping-voice" class="font-semibold">-</span>
-                    </p>
-                    <p class="flex justify-between pt-1">
-                        <span class="text-gray-400">Uptime</span>
-                        <span id="uptime" class="font-semibold text-yellow-500">-</span>
-                    </p>
-                </div>
-
-                <!-- Bagian Kendali Radio, Volume & Request Lagu -->
-                <div class="mt-6 border-t border-gray-700 pt-4">
-                    <h3 class="text-lg font-semibold text-gray-300 mb-4">🎛️ Kendali Radio</h3>
-                    
-                    <!-- Volume Slider -->
-                    <div class="flex items-center gap-3 w-full mb-4 bg-gray-900 p-3 rounded-lg border border-gray-600">
-                        <span class="text-sm">🔉</span>
-                        <input type="range" id="global-volume" min="0" max="150" value="100" 
-                            class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" 
-                            onchange="changeBotVolume(this.value)" oninput="updateVolLabel(this.value)">
-                        <span class="text-xs text-gray-400 font-mono w-10 text-right" id="global-volume-label">100%</span>
-                    </div>
-
-                    <!-- EQ Preset Selector -->
-                    <div class="flex items-center gap-3 w-full mb-4 bg-gray-900 p-3 rounded-lg border border-gray-600">
-                        <span class="text-sm">🎛️ EQ</span>
-                        <select id="eq-preset" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-indigo-500" onchange="changeBotEQ(this.value)">
-                            <option value="flat">Flat</option>
-                            <option value="bassboost">BassBoost</option>
-                            <option value="electronic">Electronic</option>
-                            <option value="pop">Pop</option>
-                            <option value="rock">Rock</option>
-                            <option value="gaming">Gaming</option>
-                            <option value="jernih">Jernih / Vocal</option>
-                            <option value="spotify">Spotify (V-Shape)</option>
-                        </select>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <input type="text" id="genre-input" placeholder="Masukkan judul lagu atau link YouTube..." 
-                            class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
-                        <button onclick="requestSong()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
-                            Putar
-                        </button>
-                    </div>
-                    <p id="genre-msg" class="text-xs mt-2 hidden"></p>
-
-                    <!-- Chat Web ke Discord -->
-                    <div class="mt-4 pt-4 border-t border-gray-700">
-                        <h4 class="text-sm font-semibold text-gray-300 mb-2">💬 Kirim Pesan ke Discord</h4>
-                        <div class="flex gap-2">
-                            <input type="text" id="chat-input" placeholder="Ketik pesan..." 
-                                class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                                onkeypress="if(event.key === 'Enter') sendChatMessage()">
-                            <button onclick="sendChatMessage()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors whitespace-nowrap">
-                                Kirim
-                            </button>
-                        </div>
-                        <p id="chat-msg" class="text-xs mt-2 hidden"></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Kolom Bawah: Antrean & Riwayat -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            
-            <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
-                <h2 class="text-xl font-semibold text-gray-300 mb-4">📋 Antrean Request (<span id="queue-length">0</span>)</h2>
-                <ul id="queue-list" class="space-y-2">
-                    <li class="p-3 bg-gray-700 rounded text-gray-400 text-center">Memuat antrean...</li>
-                </ul>
-            </div>
-
-            <div class="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
-                <h2 class="text-xl font-semibold text-gray-300 mb-4">🕰️ Riwayat Pemutaran</h2>
-                <ul id="history-list" class="space-y-2">
-                    <li class="p-3 bg-gray-700 rounded text-gray-400 text-center">Memuat riwayat...</li>
-                </ul>
-            </div>
-            
-        </div>
-
-        <!-- Kolom Paling Bawah: Pengaturan Jadwal -->
-        <div class="mt-6 bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700">
-            <h2 class="text-xl font-semibold text-gray-300 mb-4">🗓️ Pengaturan Jadwal Genre Harian</h2>
-            
-            <div class="mb-4 flex flex-col sm:flex-row gap-2">
-                <!-- Gunakan input hidden untuk menyimpan ID jadwal yang sedang diedit -->
-                <input type="hidden" id="schedule-id">
-                <input type="time" id="schedule-start" class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" required>
-                <input type="time" id="schedule-end" class="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" required>
-                <input type="text" id="schedule-genre" placeholder="Genre (ex: lofi hiphop)" class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500" required>
-                
-                <button id="btn-save-schedule" onclick="saveSchedule()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
-                    + Tambah
-                </button>
-                <button id="btn-cancel-edit" onclick="cancelEdit()" class="hidden bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
-                    Batal
-                </button>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-400 border-collapse">
-                    <thead class="text-xs text-gray-300 uppercase bg-gray-700">
-                        <tr>
-                            <th scope="col" class="px-4 py-3 rounded-tl-lg">Mulai</th>
-                            <th scope="col" class="px-4 py-3">Selesai</th>
-                            <th scope="col" class="px-4 py-3">Genre</th>
-                            <th scope="col" class="px-4 py-3 rounded-tr-lg">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="schedule-table-body">
-                        <tr>
-                            <td colspan="4" class="px-4 py-4 text-center">Memuat jadwal...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <p id="schedule-msg" class="text-xs mt-3 hidden"></p>
-        </div>
-
-    </div>
-
-    <script>
         // Fungsi untuk mengambil data bot dan memperbarui tampilan (auto-refresh)
         async function fetchStatus() {
             try {
@@ -199,30 +10,29 @@
                     ? '<span class="text-green-400">🟢 Mengudara</span>' 
                     : '<span class="text-red-400">🔴 Berhenti</span>';
                 
-                document.getElementById('genre').innerText = data.currentGenre || '-';
-                document.getElementById('engine').innerText = data.engine ? data.engine.toUpperCase() : '-';
-                document.getElementById('song-count').innerText = data.songCount || 0;
+                document.getElementById('genre').innerText = data.currentGenre;
+                document.getElementById('engine').innerText = data.engine.toUpperCase();
+                document.getElementById('song-count').innerText = data.songCount;
                 
-                window.currentActiveGenre = data.currentGenre || ''; // Simpan untuk highlight tabel jadwal
-                document.getElementById('listeners').innerText = (data.listenerCount || 0) + ' User';
+                window.currentActiveGenre = data.currentGenre; // Simpan untuk highlight tabel jadwal
+                document.getElementById('listeners').innerText = data.listenerCount + ' User';
                 
                 // Ping Visual Indicator
-                const botPing = data.botPing || 0;
-                const pingBotColor = botPing < 100 ? 'text-green-400' : (botPing < 200 ? 'text-yellow-400' : 'text-red-500');
-                document.getElementById('ping-bot').innerHTML = `<span class="${pingBotColor}">${botPing}ms</span>`;
+                const pingBotColor = data.botPing < 100 ? 'text-green-400' : (data.botPing < 200 ? 'text-yellow-400' : 'text-red-500');
+                document.getElementById('ping-bot').innerHTML = `<span class="${pingBotColor}">${data.botPing}ms</span>`;
 
-                if (data.voicePing && data.voicePing > 0) {
+                if (data.voicePing > 0) {
                     const pingVoiceColor = data.voicePing < 50 ? 'text-green-400' : (data.voicePing < 120 ? 'text-yellow-400' : 'text-red-500');
-                    document.getElementById('ping-voice').innerHTML = `<span class="${pingVoiceColor}">${data.voicePing}ms</span> / ${data.nodeStatus || '-'}`;
+                    document.getElementById('ping-voice').innerHTML = `<span class="${pingVoiceColor}">${data.voicePing}ms</span> / ${data.nodeStatus}`;
                 } else {
-                    document.getElementById('ping-voice').innerHTML = `<span class="text-gray-500">Idle</span> / ${data.nodeStatus || '-'}`;
+                    document.getElementById('ping-voice').innerHTML = `<span class="text-gray-500">Idle</span> / ${data.nodeStatus}`;
                 }
                 
                 // Sync Volume Slider if not being dragged
                 const volSlider = document.getElementById('global-volume');
                 if (volSlider && document.activeElement !== volSlider) {
-                    volSlider.value = data.volume || 100;
-                    document.getElementById('global-volume-label').innerText = `${data.volume || 100}%`;
+                    volSlider.value = data.volume;
+                    document.getElementById('global-volume-label').innerText = `${data.volume}%`;
                 }
 
                 // Sync EQ Dropdown if not being interacted
@@ -237,7 +47,7 @@
                     }
                 }
 
-                const uptimeTotalSeconds = data.uptime ? Math.floor(data.uptime) : 0;
+                const uptimeTotalSeconds = Math.floor(data.uptime);
                 const hours = Math.floor(uptimeTotalSeconds / 3600);
                 const minutes = Math.floor((uptimeTotalSeconds % 3600) / 60);
                 const seconds = uptimeTotalSeconds % 60;
@@ -251,7 +61,6 @@
                         : '<span class="bg-pink-600 text-xs px-2 py-1 rounded-full uppercase ml-1">Request User</span>';
 
                     const formatTime = (ms) => {
-                        if (!ms || isNaN(ms)) return '00:00';
                         const totalS = Math.floor(ms / 1000);
                         const m = Math.floor(totalS / 60);
                         const s = totalS % 60;
@@ -260,11 +69,9 @@
                     
                     const durationStr = formatTime(data.currentSong.length);
                     const positionStr = formatTime(data.position);
-                    const lengthNum = data.currentSong.length || 1;
-                    const posNum = data.position || 0;
-                    const progressPercent = Math.min(100, Math.max(0, (posNum / lengthNum) * 100));
+                    const progressPercent = Math.min(100, Math.max(0, (data.position / data.currentSong.length) * 100));
                     
-                    const thumbnail = data.currentSong.artworkUrl || (data.currentSong.identifier ? `https://img.youtube.com/vi/${data.currentSong.identifier}/mqdefault.jpg` : `https://via.placeholder.com/640x360.png?text=No+Thumbnail`);
+                    const thumbnail = data.currentSong.artworkUrl || `https://img.youtube.com/vi/${data.currentSong.identifier}/mqdefault.jpg`;
 
                     npEl.innerHTML = `
                         <div class="flex flex-col items-center">
@@ -318,24 +125,23 @@
                 }
 
                 // Update Queue List
-                const safeQueue = data.queue || [];
-                document.getElementById('queue-length').innerText = safeQueue.length;
+                document.getElementById('queue-length').innerText = data.queue.length;
                 const queueEl = document.getElementById('queue-list');
                 queueEl.innerHTML = '';
                 
-                if (safeQueue.length > 0) {
-                    safeQueue.forEach((song, i) => {
+                if (data.queue.length > 0) {
+                    data.queue.forEach((song, i) => {
                         const li = document.createElement('li');
                         li.className = "p-3 bg-gray-700 rounded flex gap-3 items-center hover:bg-gray-600 transition-colors group";
                         
                         const isFirst = i === 0;
-                        const isLast = i === safeQueue.length - 1;
+                        const isLast = i === data.queue.length - 1;
                         
                         li.innerHTML = `
                             <span class="bg-gray-900 text-gray-400 font-bold px-3 py-1 rounded">${i + 1}</span>
                             <div class="flex-1 truncate">
-                                <p class="font-semibold text-white truncate">${song.title || 'Unknown Title'}</p>
-                                <p class="text-xs text-gray-400">${song.author || 'Unknown Author'}</p>
+                                <p class="font-semibold text-white truncate">${song.title}</p>
+                                <p class="text-xs text-gray-400">${song.author}</p>
                             </div>
                             <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onclick="moveQueue(${i}, ${i - 1})" class="text-gray-400 hover:text-white p-1" ${isFirst ? 'disabled class="opacity-30"' : ''}>
@@ -354,75 +160,8 @@
                 } else {
                     queueEl.innerHTML = '<li class="p-4 bg-gray-700 rounded text-gray-400 text-center italic">Tidak ada lagu yang mengantre.</li>';
                 }
-
-                // Update Toggles Layer
-                const advCtrl = document.getElementById('advanced-controls');
-                if (data.isPlaying && advCtrl.classList.contains('hidden')) {
-                    advCtrl.classList.remove('hidden');
-                } else if (!data.isPlaying && !advCtrl.classList.contains('hidden')) {
-                    advCtrl.classList.add('hidden');
-                }
-
-                const loopBtn = document.getElementById('btn-loop');
-                if (loopBtn && data.loopMode) {
-                    const modeText = data.loopMode === 'single' ? '🔂 Loop: Single' : (data.loopMode === 'queue' ? '🔁 Loop: Queue' : '🔁 Loop: Off');
-                    loopBtn.innerHTML = modeText;
-                    loopBtn.dataset.mode = data.loopMode;
-                }
-
-                // Update History List
-                const historyEl = document.getElementById('history-list');
-                const safeHistory = data.playbackHistory || [];
-                if (historyEl) {
-                    if (safeHistory.length > 0) {
-                        historyEl.innerHTML = '';
-                        safeHistory.forEach((song, i) => {
-                            const li = document.createElement('li');
-                            li.className = "p-2 bg-gray-700 rounded flex gap-3 items-center border-l-4 border-gray-500 opacity-80 cursor-default hover:opacity-100 transition-opacity";
-                            li.innerHTML = `
-                                <div class="flex-1 truncate">
-                                    <p class="font-semibold text-gray-300 truncate text-sm line-through decoration-gray-500"><a href="${song.url}" target="_blank" class="hover:text-indigo-400">${song.title || 'Unknown Title'}</a></p>
-                                    <p class="text-xs text-gray-500">${song.author || 'Unknown Author'}</p>
-                                </div>
-                            `;
-                            historyEl.appendChild(li);
-                        });
-                    } else {
-                        historyEl.innerHTML = '<li class="p-4 bg-gray-700 rounded text-gray-400 text-center italic">Riwayat masih kosong.</li>';
-                    }
-                }
-
             } catch (err) {
                 console.error('Gagal terhubung ke API Dashboard', err);
-            }
-        }
-
-        // FUNGSI ADVANCED: Loop Mode Toggles
-        async function toggleLoop() {
-            const loopBtn = document.getElementById('btn-loop');
-            const modes = ['off', 'single', 'queue'];
-            let currentMode = loopBtn.dataset.mode || 'off';
-            let nextMode = modes[(modes.indexOf(currentMode) + 1) % modes.length];
-
-            try {
-                await fetch('/api/controls/loop', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mode: nextMode })
-                });
-                fetchStatus();
-            } catch (err) {
-                alert('Gagal mengubah loop mode.');
-            }
-        }
-
-        async function shuffleQueue() {
-            try {
-                await fetch('/api/controls/shuffle', { method: 'POST' });
-                alert('Antrean berhasil diacak!');
-                fetchStatus();
-            } catch (err) {
-                alert('Gagal mengacak antrean.');
             }
         }
 
@@ -707,6 +446,4 @@
         // Panggil pertama kali
         fetchSchedules();
 
-    </script>
-</body>
-</html>
+    
