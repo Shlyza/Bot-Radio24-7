@@ -292,6 +292,18 @@ client.on('messageCreate', async message => {
         }
     }
 
+    // COMMAND: !status
+    if (command === 'status') {
+        const currentSong = radio.currentSong;
+        const songText = currentSong
+            ? `🎵 Lagu Sekarang: **${currentSong.info.title}**\n🔗 Link: ${currentSong.info.uri || 'Tidak tersedia'}`
+            : '🎵 Lagu Sekarang: **Tidak ada lagu yang sedang diputar**';
+
+        return message.reply(
+            `${songText}\n🔊 Volume: **${radio.volume}%**\n🎛️ EQ: **${radio.currentEQ.toUpperCase()}**\n🎧 Mode: **${radio.currentMode.toUpperCase()}**`
+        );
+    }
+
     // COMMAND: !ping
     if (command === 'ping') {
         message.reply(`🏓 Pong! Latensi Discord: **${client.ws.ping}ms**\n📻 Mesin Aktif: **${radio.engine.toUpperCase()}**`);
