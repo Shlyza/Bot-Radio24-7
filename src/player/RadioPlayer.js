@@ -263,7 +263,11 @@ class RadioPlayer {
                 setTimeout(() => this.playNext(), 2000);
             });
 
-            this.player.on('closed', () => this.leave());
+            this.player.on('closed', (data) => {
+                console.log('[DEBUG] Player Closed:', data);
+                // Jangan auto-leave supaya bot tetap stay 24/7.
+                // Biarkan koneksi/reconnect menangani pemulihan dulu.
+            });
             this.player.on('error', (err) => {
                 console.error('[LAVALINK PLAYER ERROR]', err);
                 this.isPlaying = false;

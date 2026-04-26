@@ -95,6 +95,21 @@ client.on('messageCreate', async message => {
     const args = message.content.slice(prefix.length).split(/ +/);
     const command = args.shift().toLowerCase();
 
+    // COMMAND: !join
+    if (command === 'join') {
+        const voiceChannel = message.member?.voice?.channel;
+        if (!voiceChannel) return message.reply('❌ Anda harus masuk ke **Voice Channel** terlebih dahulu!');
+        if (radio.player) return message.reply('📻 Saya sudah berada di voice channel!');
+        
+        try {
+            await radio.joinAndStart(voiceChannel.id, message.guild.id);
+            return message.reply(`📻 Berhasil bergabung ke **${voiceChannel.name}** dan menyalakan radio!`);
+        } catch (err) {
+            console.error(err);
+            return message.reply('❌ Gagal bergabung ke Voice Channel.');
+        }
+    }
+
     // COMMAND: ?play [judul_or_link]
     if (command === 'play' || command === 'p') {
         const query = args.join(' ');
