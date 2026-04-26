@@ -53,6 +53,7 @@ let scheduler;
 async function startBot() {
     console.log('[SYSTEM] Menyiapkan database...');
     db = await initDB();
+    await radio.setDatabase(db);
 
     scheduler = new GenreScheduler(radio, db);
 
@@ -99,10 +100,12 @@ client.on('messageCreate', async message => {
     if (command === 'join') {
         const voiceChannel = message.member?.voice?.channel;
         if (!voiceChannel) return message.reply('❌ Anda harus masuk ke **Voice Channel** terlebih dahulu!');
-        if (radio.player) return message.reply('📻 Saya sudah berada di voice channel!');
-        
+
         try {
-            await radio.joinAndStart(voiceChannel.id, message.guild.id);
+            const joined = await radio.joinAndStart(voiceChannel.id, message.guild.id);
+            if (!joined) {
+                return message.reply('❌ Gagal bergabung ke Voice Channel. Coba lagi beberapa detik.');
+            }
             return message.reply(`📻 Berhasil bergabung ke **${voiceChannel.name}** dan menyalakan radio!`);
         } catch (err) {
             console.error(err);
@@ -118,7 +121,10 @@ client.on('messageCreate', async message => {
         // Deteksi kalo bot-nya blm join VC sama sekali 
         if (!message.member.voice.channel) return message.reply('❌ Ke channel suara (VC) dulu ya Pak!');
         if (!radio.player) {
-            await radio.joinAndStart(message.member.voice.channel.id, message.guild.id);
+            const joined = await radio.joinAndStart(message.member.voice.channel.id, message.guild.id);
+            if (!joined) {
+                return message.reply('❌ Bot gagal join ke VC. Coba lagi sebentar.');
+            }
             message.reply('⏳ Terhubung dan memasukkan lagu Anda ke antrean...');
         }
 

@@ -5,6 +5,7 @@ class RadioPlayer {
     constructor(client, shoukaku) {
         this.client = client;
         this.shoukaku = shoukaku;
+        this.db = null;
         this.player = null; 
         this.currentGenre = 'lofi chill';
         this.currentGenreName = 'lofi chill';
@@ -31,7 +32,80 @@ class RadioPlayer {
         // WATCHDOG ANTI-STUCK
         this.lastPosition = 0;
         this.stuckCount = 0;
+        this.lastVoiceChannelId = null;
+        this.lastGuildId = null;
+        this.reconnectAttempts = 0;
+        this.reconnectTimer = null;
         setInterval(() => this.checkWatchdog(), 15000); // Cek setiap 15 detik
+    }
+
+    scheduleReconnect() {
+        if (!this.lastVoiceChannelId || !this.lastGuildId) return;
+        if (this.reconnectTimer) return;
+
+        this.reconnectAttempts += 1;
+        const delay = Math.min(30000, 3000 * this.reconnectAttempts);
+
+        console.log(`[RECONNECT] Mencoba masuk ulang ke VC dalam ${delay}ms (percobaan ke-${this.reconnectAttempts})...`);
+        this.reconnectTimer = setTimeout(async () => {
+            this.reconnectTimer = null;
+            const joined = await this.joinAndStart(this.lastVoiceChannelId, this.lastGuildId, true);
+            if (!joined) {
+                this.scheduleReconnect();
+            }
+        }, delay);
+    }
+
+    async setDatabase(db) {
+        this.db = db;
+        await this.loadPlaybackHistory();
+    }
+
+    async loadPlaybackHistory() {
+        if (!this.db) return;
+
+        try {
+            const rows = await this.db.all(
+                'SELECT title, author, url FROM playback_history ORDER BY played_at DESC, id DESC LIMIT 10'
+            );
+            this.playbackHistory = rows.map(row => ({
+                title: row.title,
+                author: row.author,
+                url: row.url
+            }));
+        } catch (error) {
+            console.error('[HISTORY] Gagal memuat riwayat lagu:', error.message);
+            this.playbackHistory = [];
+        }
+    }
+
+    async savePlaybackHistory(track) {
+        if (!this.db || !track || !track.info) return;
+
+        const entry = {
+            title: track.info.title,
+            author: track.info.author,
+            url: track.info.uri
+        };
+
+        try {
+            await this.db.run(
+                'INSERT INTO playback_history (title, author, url) VALUES (?, ?, ?)',
+                [entry.title, entry.author, entry.url]
+            );
+
+            const rows = await this.db.all(
+                'SELECT id FROM playback_history ORDER BY played_at DESC, id DESC'
+            );
+
+            if (rows.length > 10) {
+                const idsToDelete = rows.slice(10).map(row => row.id);
+                const placeholders = idsToDelete.map(() => '?').join(', ');
+                await this.db.run(`DELETE FROM playback_history WHERE id IN (${placeholders})`, idsToDelete);
+            }
+        } catch (error) {
+            console.error('[HISTORY] Gagal menyimpan riwayat lagu:', error.message);
+        }
     }
 
     checkWatchdog() {
@@ -46,8 +120,14 @@ class RadioPlayer {
             console.log(`[WATCHDOG] Posisi audio tidak bergerak... (${this.stuckCount}/4)`);
             
             if (this.stuckCount >= 4) { // Macet tanpa pergerakan selama 60 detik
-                console.log('[WATCHDOG] Bot terdeteksi NG-STUCK total! Mengirim sinyal AUTO-RESTART...');
-                process.exit(1); // Force exit biar merestart otomatis di Railway/PM2
+                console.log('[WATCHDOG] Bot terdeteksi NG-STUCK total! Memaksa skip track untuk recovery tanpa restart proses.');
+                this.stuckCount = 0;
+                this.isPlaying = false;
+                if (this.player && typeof this.player.stopTrack === 'function') {
+                    this.player.stopTrack();
+                } else {
+                    this.playNext();
+                }
             }
         } else {
             this.stuckCount = 0;
@@ -188,8 +268,15 @@ class RadioPlayer {
         }
     }
 
-    async joinAndStart(channelId, guildId) {
+    async joinAndStart(channelId, guildId, isReconnect = false) {
         try {
+            this.lastVoiceChannelId = channelId;
+            this.lastGuildId = guildId;
+
+            if (this.player) {
+                return true;
+            }
+
             const node = this.shoukaku.getIdealNode();
             if (!node) throw new Error('Genset Lavalink belum terdeteksi!');
 
@@ -200,7 +287,13 @@ class RadioPlayer {
                 deaf: true // Wajib true agar bot tuli (tidak menerima suara user). Mencegah Discord memutus sepihak koneksi suaranya.
             });
 
-            console.log('[RADIO] Berhasil masuk Voice Channel via Lavalink!');
+            this.reconnectAttempts = 0;
+            if (this.reconnectTimer) {
+                clearTimeout(this.reconnectTimer);
+                this.reconnectTimer = null;
+            }
+
+            console.log(isReconnect ? '[RADIO] Berhasil reconnect ke Voice Channel via Lavalink!' : '[RADIO] Berhasil masuk Voice Channel via Lavalink!');
             this.setVolume(this.volume); // Terapkan volume yang tersimpan saat ini
             this.setEQ(this.currentEQ); // Terapkan EQ yang tersimpan
 
@@ -218,6 +311,7 @@ class RadioPlayer {
                         url: this.currentSong.info.uri
                     });
                     if (this.playbackHistory.length > 10) this.playbackHistory.pop();
+                    this.savePlaybackHistory(this.currentSong);
                 }
 
                 // Cegah loop jika track diganti secara otomatis oleh playTrack()
@@ -266,7 +360,10 @@ class RadioPlayer {
             this.player.on('closed', (data) => {
                 console.log('[DEBUG] Player Closed:', data);
                 // Jangan auto-leave supaya bot tetap stay 24/7.
-                // Biarkan koneksi/reconnect menangani pemulihan dulu.
+                // Coba auto-reconnect ke VC terakhir.
+                this.player = null;
+                this.isPlaying = false;
+                this.scheduleReconnect();
             });
             this.player.on('error', (err) => {
                 console.error('[LAVALINK PLAYER ERROR]', err);
@@ -275,8 +372,10 @@ class RadioPlayer {
             });
 
             this.playNext();
+            return true;
         } catch (error) {
             console.error('[CRITICAL] Gagal Join:', error.message);
+            return false;
         }
     }
 
@@ -299,6 +398,14 @@ class RadioPlayer {
     }
 
     leave() {
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
+        this.reconnectAttempts = 0;
+        this.lastVoiceChannelId = null;
+        this.lastGuildId = null;
+
         if (this.player) {
             this.isPlaying = false;
             this.shoukaku.leaveVoiceChannel(this.player.guildId);

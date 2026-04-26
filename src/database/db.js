@@ -20,6 +20,16 @@ async function initDB() {
         )
     `);
 
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS playback_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            author TEXT,
+            url TEXT,
+            played_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
     // 3. Migrasi otomatis dari config.json hanya jika tabel masih kosong
     const { count } = await db.get('SELECT COUNT(*) as count FROM schedules');
     if (count === 0) {
