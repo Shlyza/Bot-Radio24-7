@@ -208,6 +208,25 @@ class RadioPlayer {
                 { band: 6, gain: 0.0 }, { band: 7, gain: 0.02 }, { band: 8, gain: 0.03 },
                 { band: 9, gain: 0.04 }, { band: 10, gain: 0.05 }, { band: 11, gain: 0.06 },
                 { band: 12, gain: 0.07 }, { band: 13, gain: 0.08 }, { band: 14, gain: 0.08 }
+            ],
+
+            // Brutal JJ: Bass super nendang, tapi mid-nya dipotong biar vokal nggak tenggelam
+            brutal_jj: [
+                // 🚨 Sub-bass & Bass dinaikin ekstrim (Limit atas Lavalink biar getar)
+                { band: 0, gain: 0.30 }, // Sub-bass (Getaran gempa)
+                { band: 1, gain: 0.25 }, // Punch utama (The "Jedag")
+                { band: 2, gain: 0.15 }, // Upper bass
+                
+                // 🧹 Area "Mud" (Dengung) kita potong sadis. 
+                // Ini rahasianya biar bass gede tapi suara nggak kayak di dalam kaleng!
+                { band: 3, gain: -0.05 }, 
+                { band: 4, gain: -0.10 }, 
+                { band: 5, gain: -0.05 }, 
+                
+                // 💎 Mid & High dibikin naik dikit biar vokal & hi-hat tetep "nyelekit"
+                { band: 6, gain: 0.0 }, { band: 7, gain: 0.0 }, { band: 8, gain: 0.02 },
+                { band: 9, gain: 0.04 }, { band: 10, gain: 0.05 }, { band: 11, gain: 0.06 },
+                { band: 12, gain: 0.07 }, { band: 13, gain: 0.07 }, { band: 14, gain: 0.07 }
             ]
         };
 
