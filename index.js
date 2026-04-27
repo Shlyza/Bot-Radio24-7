@@ -253,7 +253,7 @@ client.on('messageCreate', async message => {
     // COMMAND: !eq
     if (command === 'eq' || command === 'equalizer') {
         const preset = args[0]?.toLowerCase();
-        const availableEQs = ['flat', 'bassboost', 'electronic', 'pop', 'rock', 'gaming', 'jernih', 'spotify'];
+        const availableEQs = ['flat', 'bassboost', 'electronic', 'pop', 'rock', 'gaming', 'jernih', 'spotify', 'brutal_jj'];
 
         if (!preset) {
             return message.reply(`🎛️ **Equalizer Saat Ini:** \`${radio.currentEQ}\`\n\n**Preset Tersedia:**\n${availableEQs.map(eq => `\`${eq}\``).join(', ')}\n\n*Gunakan: \`${prefix}eq <nama_preset>\`*`);
@@ -374,7 +374,7 @@ client.on('messageCreate', async message => {
 🔹 **\`!clear\`** - Menghapus semua lagu di antrean request
 🔹 **\`!np\`** - Menampilkan info lagu yang sedang diputar
 🔹 **\`!volume <1-100>\`** - Mengatur besar volume suara (Alias: \`!vol\`)
-🔹 **\`!eq <preset>\`** - Mengubah preset equalizer (flat, bassboost, electronic, pop, rock, gaming, jernih, spotify)
+🔹 **\`!eq <preset>\`** - Mengubah preset equalizer (flat, bassboost, electronic, pop, rock, gaming, jernih, spotify, brutal_jj)
 
 **📻 Perintah Radio & Sistem:**
 🔹 **\`!genre\`** - Melihat genre radio yang memutar otomatis saat ini
