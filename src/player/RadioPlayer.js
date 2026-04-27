@@ -120,21 +120,18 @@ class RadioPlayer {
             console.log(`[WATCHDOG] Posisi audio tidak bergerak... (${this.stuckCount}/3)`);
             
             if (this.stuckCount >= 3) { // Macet tanpa pergerakan selama 45 detik
-                console.log('[WATCHDOG] Bot terdeteksi NG-STUCK total! Memaksa reconnect VC untuk recovery...');
+                console.log('[WATCHDOG] Audio stuck! Memaksa resume track saat ini tanpa leave VC...');
                 this.stuckCount = 0;
-                this.isPlaying = false;
+                this.isPlaying = false; // Ubah ke false agar playNext bisa mengeksekusi ulang
                 
-                const guildId = this.player.guildId;
-                this.player = null; // Putus koneksi agar bisa di-restart
-
-                try {
-                    this.shoukaku.leaveVoiceChannel(guildId);
-                } catch (err) {
-                    console.error('[WATCHDOG] Gagal leave VC:', err.message);
+                const stuckPosition = this.player.position || 0;
+                
+                // Langsung timpa pemutaran audionya (resume) tanpa pakai stopTrack() & tanpa leave VC
+                if (this.currentSong) {
+                    this.playNext({ isResume: true, position: stuckPosition });
+                } else {
+                    this.playNext(); // Fallback skip biasa
                 }
-
-                // Panggil reconnect buat masuk lagi & putar lagunya
-                this.scheduleReconnect();
             }
         } else {
             this.stuckCount = 0;
