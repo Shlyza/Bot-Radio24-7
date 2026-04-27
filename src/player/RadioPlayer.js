@@ -117,17 +117,24 @@ class RadioPlayer {
         // Kalau lagunya tertunda/macet (posisi audio di Lavalink tidak bergerak padahal isPlaying = true)
         if (this.player.position > 0 && this.player.position === this.lastPosition) {
             this.stuckCount++;
-            console.log(`[WATCHDOG] Posisi audio tidak bergerak... (${this.stuckCount}/4)`);
+            console.log(`[WATCHDOG] Posisi audio tidak bergerak... (${this.stuckCount}/3)`);
             
-            if (this.stuckCount >= 4) { // Macet tanpa pergerakan selama 60 detik
-                console.log('[WATCHDOG] Bot terdeteksi NG-STUCK total! Memaksa skip track untuk recovery tanpa restart proses.');
+            if (this.stuckCount >= 3) { // Macet tanpa pergerakan selama 45 detik
+                console.log('[WATCHDOG] Bot terdeteksi NG-STUCK total! Memaksa reconnect VC untuk recovery...');
                 this.stuckCount = 0;
                 this.isPlaying = false;
-                if (this.player && typeof this.player.stopTrack === 'function') {
-                    this.player.stopTrack();
-                } else {
-                    this.playNext();
+                
+                const guildId = this.player.guildId;
+                this.player = null; // Putus koneksi agar bisa di-restart
+
+                try {
+                    this.shoukaku.leaveVoiceChannel(guildId);
+                } catch (err) {
+                    console.error('[WATCHDOG] Gagal leave VC:', err.message);
                 }
+
+                // Panggil reconnect buat masuk lagi & putar lagunya
+                this.scheduleReconnect();
             }
         } else {
             this.stuckCount = 0;
