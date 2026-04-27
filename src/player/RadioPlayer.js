@@ -120,17 +120,15 @@ class RadioPlayer {
             console.log(`[WATCHDOG] Posisi audio tidak bergerak... (${this.stuckCount}/3)`);
             
             if (this.stuckCount >= 3) { // Macet tanpa pergerakan selama 45 detik
-                console.log('[WATCHDOG] Audio stuck! Memaksa resume track saat ini tanpa leave VC...');
+                console.log('[WATCHDOG] Audio stuck! Memaksa skip ke lagu baru untuk mencegah error berkelanjutan...');
                 this.stuckCount = 0;
                 this.isPlaying = false; // Ubah ke false agar playNext bisa mengeksekusi ulang
                 
-                const stuckPosition = this.player.position || 0;
-                
-                // Langsung timpa pemutaran audionya (resume) tanpa pakai stopTrack() & tanpa leave VC
-                if (this.currentSong) {
-                    this.playNext({ isResume: true, position: stuckPosition });
+                // Daripada maksa resume yang rawan nyangkut, mending langsung stop biar auto play lagu baru
+                if (this.player && typeof this.player.stopTrack === 'function') {
+                    this.player.stopTrack(); // Akan memicu event 'end' yang ganti track secara aman
                 } else {
-                    this.playNext(); // Fallback skip biasa
+                    this.playNext(); // Fallback
                 }
             }
         } else {
@@ -351,20 +349,10 @@ class RadioPlayer {
                 }
 
                 // Kalau lagu full album tiba-tiba berhenti padahal belum selesai
-                let isPremature = false;
-                let resumePosition = 0;
-
-                // Pastikan tidak resume kalau lagunya distop paksa (!skip)
-                if (endReason !== 'STOPPED' && this.currentSong && !this.currentSong.info.isStream) {
-                    if (this.player.position > 10000 && this.player.position < (this.currentSong.info.length - 10000)) {
-                        isPremature = true;
-                        resumePosition = Math.max(0, this.player.position - 5000);
-                        console.log(`[RADIO] Lagu tiba-tiba berhenti! (Reason: ${endReason}, Terakhir: ${this.player.position}ms / ${this.currentSong.info.length}ms) Mencoba auto-resume dari: ${resumePosition}ms`);
-                    }
-                }
+                // FITUR RESUME DIMATIKAN: Karena rawan bikin bot nyangkut/mentok pas reconnect
                 
                 this.isPlaying = false;
-                this.playNext({ isResume: isPremature, position: resumePosition });
+                this.playNext(); // Langsung ganti lagu baru aja biar fresh
             });
 
             this.player.on('exception', (err) => {
