@@ -127,9 +127,15 @@ class RadioPlayer {
                 // Panggil ulang dari playNext atau stopTrack
                 if (this.player && typeof this.player.stopTrack === 'function') {
                     this.player.stopTrack(); 
-                } else {
-                    this.playNext(); 
                 }
+                
+                // Pastikan beneran nge-play lagu baru kalau event 'end' ga ketrigger
+                setTimeout(() => {
+                    if (!this.isPlaying) {
+                        console.log('[WATCHDOG] Fallback: Memaksa playNext() berjalan...');
+                        this.playNext();
+                    }
+                }, 2500);
             }
         } else {
             this.stuckCount = 0;
