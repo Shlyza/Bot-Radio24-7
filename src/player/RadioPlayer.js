@@ -114,21 +114,21 @@ class RadioPlayer {
             return;
         }
 
-        // Kalau lagunya tertunda/macet (posisi audio di Lavalink tidak bergerak padahal isPlaying = true)
-        if (this.player.position > 0 && this.player.position === this.lastPosition) {
+        // Kalau posisi audio di Lavalink tidak bergerak (termasuk kalau stuck di 0ms pas baru buffering)
+        if (this.player.position === this.lastPosition) {
             this.stuckCount++;
-            console.log(`[WATCHDOG] Posisi audio tidak bergerak... (${this.stuckCount}/3)`);
+            console.log(`[WATCHDOG] Posisi audio tidak bergerak (${this.player.position}ms)... (${this.stuckCount}/3)`);
             
             if (this.stuckCount >= 3) { // Macet tanpa pergerakan selama 45 detik
-                console.log('[WATCHDOG] Audio stuck! Memaksa skip ke lagu baru untuk mencegah error berkelanjutan...');
+                console.log('[WATCHDOG] Audio stuck secara total! Memaksa skip ke lagu baru...');
                 this.stuckCount = 0;
-                this.isPlaying = false; // Ubah ke false agar playNext bisa mengeksekusi ulang
+                this.isPlaying = false;
                 
-                // Daripada maksa resume yang rawan nyangkut, mending langsung stop biar auto play lagu baru
+                // Panggil ulang dari playNext atau stopTrack
                 if (this.player && typeof this.player.stopTrack === 'function') {
-                    this.player.stopTrack(); // Akan memicu event 'end' yang ganti track secara aman
+                    this.player.stopTrack(); 
                 } else {
-                    this.playNext(); // Fallback
+                    this.playNext(); 
                 }
             }
         } else {
