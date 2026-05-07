@@ -120,22 +120,9 @@ class RadioPlayer {
             console.log(`[WATCHDOG] Posisi audio tidak bergerak (${this.player.position}ms)... (${this.stuckCount}/3)`);
             
             if (this.stuckCount >= 3) { // Macet tanpa pergerakan selama 45 detik
-                console.log('[WATCHDOG] Audio stuck secara total! Memaksa skip ke lagu baru...');
+                console.log('[WATCHDOG] Audio stuck secara total! Melakukan reset player layaknya command reset...');
                 this.stuckCount = 0;
-                this.isPlaying = false;
-                
-                // Panggil ulang dari playNext atau stopTrack
-                if (this.player && typeof this.player.stopTrack === 'function') {
-                    this.player.stopTrack(); 
-                }
-                
-                // Pastikan beneran nge-play lagu baru kalau event 'end' ga ketrigger
-                setTimeout(() => {
-                    if (!this.isPlaying) {
-                        console.log('[WATCHDOG] Fallback: Memaksa playNext() berjalan...');
-                        this.playNext();
-                    }
-                }, 2500);
+                this.reset();
             }
         } else {
             this.stuckCount = 0;
@@ -669,7 +656,11 @@ class RadioPlayer {
         this.isRadioPlaying = false;
         this.isPlaying = false;
         if (this.player) {
-            this.player.stopTrack(); // Akan memicu playNext karena antrean kosong
+            this.player.stopTrack(); 
+            // Pastikan lagu otomatis terputar lagi
+            setTimeout(() => {
+                if (!this.isPlaying) this.playNext();
+            }, 1500);
         }
         console.log('[RADIO] Player audio telah direset.');
     }
