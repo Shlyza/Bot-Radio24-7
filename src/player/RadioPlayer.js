@@ -117,9 +117,9 @@ class RadioPlayer {
         // Kalau posisi audio di Lavalink tidak bergerak (termasuk kalau stuck di 0ms pas baru buffering)
         if (this.player.position === this.lastPosition) {
             this.stuckCount++;
-            console.log(`[WATCHDOG] Posisi audio tidak bergerak (${this.player.position}ms)... (${this.stuckCount}/3)`);
+            console.log(`[WATCHDOG] Posisi audio tidak bergerak (${this.player.position}ms)... (${this.stuckCount}/1)`);
             
-            if (this.stuckCount >= 3) { // Macet tanpa pergerakan selama 45 detik
+            if (this.stuckCount >= 1) { // Macet tanpa pergerakan selama 15 detik, langsung reset aja
                 console.log('[WATCHDOG] Audio stuck secara total! Melakukan reset player layaknya command reset...');
                 this.stuckCount = 0;
                 this.reset();
