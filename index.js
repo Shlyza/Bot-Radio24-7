@@ -310,6 +310,26 @@ client.on('messageCreate', async message => {
         );
     }
 
+    if (command === 'hardreset') {
+        const { exec } = require('child_process');
+        
+        // Simpan id channel agar bisa ngasih notif pas udah nyala lagi
+        fs.writeFileSync('restart.tmp', message.channel.id);
+        
+        message.reply('🔥 Melakukan HARD RESET langsung ke server (pm2 restart all)... Tunggu sebentar!').then(() => {
+            radio.reset();
+            setTimeout(() => {
+                exec('pm2 restart all', (error, stdout, stderr) => {
+                    if (error) {
+                        console.error(`[HARDRESET ERROR]: ${error}`);
+                        // fallback jika pm2 gagal
+                        process.exit(1);
+                    }
+                });
+            }, 1000);
+        });
+    }
+
     // COMMAND: !ping
     if (command === 'ping') {
         message.reply(`🏓 Pong! Latensi Discord: **${client.ws.ping}ms**\n📻 Mesin Aktif: **${radio.engine.toUpperCase()}**`);

@@ -36,6 +36,7 @@ class RadioPlayer {
         this.lastGuildId = null;
         this.reconnectAttempts = 0;
         this.reconnectTimer = null;
+        this.idleCount = 0; // Tambahan untuk deteksi idle time
         setInterval(() => this.checkWatchdog(), 15000); // Cek setiap 15 detik
     }
 
@@ -111,7 +112,24 @@ class RadioPlayer {
     checkWatchdog() {
         if (!this.player || !this.isPlaying) {
             this.stuckCount = 0;
+            this.idleCount++;
+            
+            console.log(`[WATCHDOG] Terdeteksi idle / tidak memutar lagu... (${this.idleCount}/3)`);
+            
+            if (this.idleCount >= 3) { // Idle tanpa lagu selama 45 detik
+                console.log('[WATCHDOG] Bot idle terlalu lama! Mencoba hard-reset lagu...');
+                this.idleCount = 0;
+                
+                // Kalau bot gak ada player (disconnected), coba masuk lagi
+                if (!this.player && this.lastVoiceChannelId && this.lastGuildId) {
+                    this.joinAndStart(this.lastVoiceChannelId, this.lastGuildId, true);
+                } else {
+                    this.reset();
+                }
+            }
             return;
+        } else {
+            this.idleCount = 0;
         }
 
         // Kalau posisi audio di Lavalink tidak bergerak (termasuk kalau stuck di 0ms pas baru buffering)
