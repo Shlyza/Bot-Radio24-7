@@ -23,10 +23,10 @@ const client = new Client({
 // KONFIGURASI KABEL KE GENSET LAVALINK
 // ==========================================
 const Nodes = [{
-    name: 'MilloHost Lavalink (Asia)', // Nama bebas, untuk log di terminal
-    url: 'lava-v4.millohost.my.id:443', // Format: Host:Port
-    auth: 'https://discord.gg/mjS5J2K3ep', // Masukkan password di sini
-    secure: true // Wajib true karena dari penyedia tertulis true (pakai wss/https)
+    name: "MilloHost Lavalink (Asia)",
+    url: "lava-v4.millohost.my.id:443",
+    auth: "https://discord.gg/mjS5J2K3ep",
+    secure: true
 }];
 
 const shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes);

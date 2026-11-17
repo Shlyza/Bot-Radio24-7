@@ -2,6 +2,18 @@ const googleTTS = require('google-tts-api');
 const config = require('../../config.json');
 
 class RadioPlayer {
+    skipTrack() {
+        console.log("[SKIP] Memaksa skip ke lagu berikutnya...");
+        this.isPlaying = false;
+        if (this.player) {
+            this.player.stopTrack();
+        }
+        setTimeout(() => {
+            if (!this.isPlaying) this.playNext();
+        }, 500);
+        return true;
+    }
+
     constructor(client, shoukaku) {
         this.client = client;
         this.shoukaku = shoukaku;
@@ -137,11 +149,7 @@ class RadioPlayer {
             this.stuckCount++;
             console.log(`[WATCHDOG] Posisi audio tidak bergerak (${this.player.position}ms)... (${this.stuckCount}/2)`);
             
-            if (this.stuckCount >= 2) { // Macet tanpa pergerakan selama 30 detik
-                console.log('[WATCHDOG] Audio stuck secara total! Melakukan reset player layaknya command reset...');
-                this.stuckCount = 0;
-                this.reset();
-            }
+            if (this.stuckCount >= 10 && !this.isPlaying) { this.stuckCount = 0; this.playNext(); }
         } else {
             this.stuckCount = 0;
         }
